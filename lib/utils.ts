@@ -1,0 +1,86 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { CovenantStatus } from "./types";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+export function formatDateTime(dateString: string): string {
+  return new Date(dateString).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function getStatusColor(status: CovenantStatus): {
+  bg: string;
+  text: string;
+  border: string;
+  dot: string;
+} {
+  switch (status) {
+    case 'GREEN':
+      return {
+        bg: 'bg-green-50',
+        text: 'text-green-700',
+        border: 'border-green-200',
+        dot: 'bg-green-500',
+      };
+    case 'AMBER':
+      return {
+        bg: 'bg-amber-50',
+        text: 'text-amber-700',
+        border: 'border-amber-200',
+        dot: 'bg-amber-500',
+      };
+    case 'RED':
+      return {
+        bg: 'bg-red-50',
+        text: 'text-red-700',
+        border: 'border-red-200',
+        dot: 'bg-red-500',
+      };
+  }
+}
+
+export function getStatusLabel(status: CovenantStatus): string {
+  switch (status) {
+    case 'GREEN':
+      return 'Compliant';
+    case 'AMBER':
+      return 'Warning';
+    case 'RED':
+      return 'Breach';
+  }
+}
+
+export function truncateHash(hash: string, chars: number = 8): string {
+  if (!hash) return '';
+  return `${hash.slice(0, chars + 2)}...${hash.slice(-chars)}`;
+}
+
+export function getExplorerUrl(txHash: string): string {
+  // Polygon Amoy testnet explorer
+  return `https://www.oklink.com/amoy/tx/${txHash}`;
+}

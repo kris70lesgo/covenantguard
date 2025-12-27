@@ -1,100 +1,71 @@
 'use client';
 
-import { Box, Grid, Typography, Card, CardContent, LinearProgress, Skeleton, Chip, IconButton, Tooltip } from '@mui/material';
+import { Box, Grid, Typography, Card, CardContent, LinearProgress } from '@mui/material';
 import {
   AccountBalance as LoanIcon,
   TrendingUp as TrendingUpIcon,
   Warning as WarningIcon,
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
-  Refresh as RefreshIcon,
-  Storage as StorageIcon,
-  Code as CodeIcon,
 } from '@mui/icons-material';
-import { usePortfolio } from '@/lib/hooks/usePortfolio';
+import { mockLoans, getPortfolioStats } from '@/lib/mock-data';
 import { StatCard } from '@/components/StatusBadge';
 import LoanTable from '@/components/LoanTable';
 import { formatCurrency } from '@/lib/utils';
 
 export default function PortfolioDashboard() {
-  const { loans, stats, loading, refresh, source } = usePortfolio();
+  const stats = getPortfolioStats();
 
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Portfolio Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Real-time covenant compliance monitoring across your loan portfolio
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Chip
-            icon={source === 'database' ? <StorageIcon /> : <CodeIcon />}
-            label={source === 'database' ? 'Live Data' : source === 'loading' ? 'Loading...' : 'Demo Mode'}
-            color={source === 'database' ? 'success' : 'default'}
-            size="small"
-            variant="outlined"
-          />
-          <Tooltip title="Refresh data">
-            <IconButton onClick={refresh} disabled={loading} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Portfolio Dashboard
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Real-time covenant compliance monitoring across your loan portfolio
+        </Typography>
       </Box>
 
       {/* Stats Grid */}
-      {loading ? (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Skeleton variant="rounded" height={120} />
-            </Grid>
-          ))}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title="Total Loans"
+            value={stats.totalLoans}
+            subtitle="Active facilities"
+            icon={<LoanIcon />}
+          />
         </Grid>
-      ) : (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Total Loans"
-              value={stats.totalLoans}
-              subtitle="Active facilities"
-              icon={<LoanIcon />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Total Exposure"
-              value={formatCurrency(stats.totalExposure)}
-              subtitle="Outstanding balance"
-              icon={<TrendingUpIcon />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Compliance Rate"
-              value={`${stats.complianceRate.toFixed(0)}%`}
-              subtitle={`${stats.greenCount} of ${stats.totalLoans} compliant`}
-              icon={<CheckIcon />}
-              status="GREEN"
-              trend={{ value: 5, positive: true }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="At Risk"
-              value={formatCurrency(stats.atRiskExposure)}
-              subtitle={`${stats.amberCount + stats.redCount} loans need attention`}
-              icon={<WarningIcon />}
-              status="AMBER"
-            />
-          </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title="Total Exposure"
+            value={formatCurrency(stats.totalExposure)}
+            subtitle="Outstanding balance"
+            icon={<TrendingUpIcon />}
+          />
         </Grid>
-      )}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title="Compliance Rate"
+            value={`${stats.complianceRate.toFixed(0)}%`}
+            subtitle={`${stats.greenCount} of ${stats.totalLoans} compliant`}
+            icon={<CheckIcon />}
+            status="GREEN"
+            trend={{ value: 5, positive: true }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title="At Risk"
+            value={formatCurrency(stats.atRiskExposure)}
+            subtitle={`${stats.amberCount + stats.redCount} loans need attention`}
+            icon={<WarningIcon />}
+            status="AMBER"
+          />
+        </Grid>
+      </Grid>
 
       {/* Status Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -208,11 +179,7 @@ export default function PortfolioDashboard() {
       </Grid>
 
       {/* Loans Table */}
-      {loading ? (
-        <Skeleton variant="rounded" height={300} />
-      ) : (
-        <LoanTable loans={loans} />
-      )}
+      <LoanTable loans={mockLoans} />
     </Box>
   );
 }

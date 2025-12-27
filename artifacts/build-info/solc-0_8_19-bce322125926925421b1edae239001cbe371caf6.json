@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_19-bce322125926925421b1edae239001cbe371caf6",
+  "solcVersion": "0.8.19",
+  "solcLongVersion": "0.8.19+commit.7dd6d404",
+  "userSourceNameMap": {
+    "contracts/CovenantRegistry.sol": "project/contracts/CovenantRegistry.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "paris",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/CovenantRegistry.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.19;\r\n\r\n/**\r\n * @title CovenantRegistry\r\n * @dev Stores immutable covenant compliance records on the Polygon blockchain\r\n * @notice This contract creates a tamper-proof audit trail for loan covenant events\r\n */\r\ncontract CovenantRegistry {\r\n    \r\n    // Structure to store compliance event data\r\n    struct ComplianceEvent {\r\n        bytes32 dataHash;       // Keccak256 hash of the compliance data\r\n        uint256 timestamp;      // Block timestamp when sealed\r\n        address sealedBy;       // Address that sealed the record\r\n        string loanId;          // Loan identifier\r\n        string status;          // GREEN, AMBER, or RED\r\n    }\r\n    \r\n    // Mapping from event ID to ComplianceEvent\r\n    mapping(bytes32 => ComplianceEvent) public events;\r\n    \r\n    // Array to track all event IDs\r\n    bytes32[] public eventIds;\r\n    \r\n    // Events\r\n    event ComplianceSealed(\r\n        bytes32 indexed eventId,\r\n        bytes32 dataHash,\r\n        string loanId,\r\n        string status,\r\n        uint256 timestamp,\r\n        address sealedBy\r\n    );\r\n    \r\n    /**\r\n     * @dev Seals a compliance event on the blockchain\r\n     * @param _dataHash Keccak256 hash of the compliance data (off-chain calculation)\r\n     * @param _loanId The loan facility identifier\r\n     * @param _status The compliance status (GREEN, AMBER, RED)\r\n     * @return eventId The unique identifier for this sealed event\r\n     */\r\n    function sealComplianceEvent(\r\n        bytes32 _dataHash,\r\n        string memory _loanId,\r\n        string memory _status\r\n    ) external returns (bytes32 eventId) {\r\n        // Generate unique event ID\r\n        eventId = keccak256(abi.encodePacked(_dataHash, block.timestamp, msg.sender));\r\n        \r\n        // Ensure this event doesn't already exist\r\n        require(events[eventId].timestamp == 0, \"Event already exists\");\r\n        \r\n        // Store the event\r\n        events[eventId] = ComplianceEvent({\r\n            dataHash: _dataHash,\r\n            timestamp: block.timestamp,\r\n            sealedBy: msg.sender,\r\n            loanId: _loanId,\r\n            status: _status\r\n        });\r\n        \r\n        eventIds.push(eventId);\r\n        \r\n        // Emit event for indexing\r\n        emit ComplianceSealed(\r\n            eventId,\r\n            _dataHash,\r\n            _loanId,\r\n            _status,\r\n            block.timestamp,\r\n            msg.sender\r\n        );\r\n        \r\n        return eventId;\r\n    }\r\n    \r\n    /**\r\n     * @dev Verifies a compliance event exists and matches the provided data hash\r\n     * @param _eventId The event ID to verify\r\n     * @param _dataHash The expected data hash\r\n     * @return valid True if the event exists and hashes match\r\n     */\r\n    function verifyEvent(bytes32 _eventId, bytes32 _dataHash) external view returns (bool valid) {\r\n        ComplianceEvent memory evt = events[_eventId];\r\n        return evt.timestamp > 0 && evt.dataHash == _dataHash;\r\n    }\r\n    \r\n    /**\r\n     * @dev Gets the total number of sealed events\r\n     * @return count The number of events in the registry\r\n     */\r\n    function getEventCount() external view returns (uint256 count) {\r\n        return eventIds.length;\r\n    }\r\n    \r\n    /**\r\n     * @dev Gets event details by ID\r\n     * @param _eventId The event ID to query\r\n     * @return dataHash The compliance data hash\r\n     * @return timestamp When the event was sealed\r\n     * @return sealedBy Who sealed the event\r\n     * @return loanId The loan identifier\r\n     * @return status The compliance status\r\n     */\r\n    function getEvent(bytes32 _eventId) external view returns (\r\n        bytes32 dataHash,\r\n        uint256 timestamp,\r\n        address sealedBy,\r\n        string memory loanId,\r\n        string memory status\r\n    ) {\r\n        ComplianceEvent memory evt = events[_eventId];\r\n        return (evt.dataHash, evt.timestamp, evt.sealedBy, evt.loanId, evt.status);\r\n    }\r\n}\r\n"
+      }
+    }
+  }
+}
