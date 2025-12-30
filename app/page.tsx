@@ -1,218 +1,117 @@
 'use client';
 
-import { Box, Grid, Typography, Card, CardContent, LinearProgress, Skeleton, Chip, IconButton, Tooltip } from '@mui/material';
-import {
-  AccountBalance as LoanIcon,
-  TrendingUp as TrendingUpIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckIcon,
-  Error as ErrorIcon,
-  Refresh as RefreshIcon,
-  Storage as StorageIcon,
-  Code as CodeIcon,
-} from '@mui/icons-material';
-import { usePortfolio } from '@/lib/hooks/usePortfolio';
-import { StatCard } from '@/components/StatusBadge';
-import LoanTable from '@/components/LoanTable';
-import { formatCurrency } from '@/lib/utils';
+import React from 'react';
+import SalesStatisticsCard from '@/components/SalesStatisticsCard';
+import RecentTransactionsCard from '@/components/RecentTransactionsCard';
+import CurrentBalanceCard from '@/components/CurrentBalanceCard';
+import MarketForecastCard from '@/components/MarketForecastCard';
+import StatisticsCard from '@/components/Statistics';
+import AnalyticsCard from '@/components/AnalyticsCard';
+import PaymentTemplatesCard from '@/components/PaymentTemplateCard';
+import { AnalyticsData, StatisticsData, User } from '@/types';
+import { ShieldCheck } from 'lucide-react';
 
 export default function PortfolioDashboard() {
-  const { loans, stats, loading, refresh, source } = usePortfolio();
+  // Data for "Portfolio Compliance" (StatisticsCard)
+  const complianceData: StatisticsData[] = [
+    { label: 'Mon', value: 142 },
+    { label: 'Tue', value: 145 },
+    { label: 'Wed', value: 140 },
+    { label: 'Thu', value: 138 }, // Dip
+    { label: 'Fri', value: 144 },
+    { label: 'Sat', value: 144 },
+    { label: 'Sun', value: 145 },
+  ];
+
+  // Data for "Portfolio Health Score" (AnalyticsCard)
+  const healthData: AnalyticsData[] = [
+    { label: 'Tech Sector', percentage: 88, amount: 88 },
+    { label: 'Real Estate', percentage: 65, amount: 65 }, // Risk
+    { label: 'Retail', percentage: 72, amount: 72 },
+  ];
+
+  // Data for "Active Loan Agreements" (PaymentTemplatesCard)
+  const agreements: User[] = [
+    { id: '1021', name: 'Alpha Corp', role: 'Term Loan A', imageUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=100&h=100' },
+    { id: '1022', name: 'Beta Ltd', role: 'Revolver', imageUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=100&h=100' },
+    { id: '1023', name: 'Gamma Inc', role: 'Bridge', imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100' },
+    { id: '1024', name: 'Delta LLC', role: 'Term Loan B', imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100' },
+  ];
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Portfolio Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Real-time covenant compliance monitoring across your loan portfolio
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Chip
-            icon={source === 'database' ? <StorageIcon /> : <CodeIcon />}
-            label={source === 'database' ? 'Live Data' : source === 'loading' ? 'Loading...' : 'Demo Mode'}
-            color={source === 'database' ? 'success' : 'default'}
-            size="small"
-            variant="outlined"
-          />
-          <Tooltip title="Refresh data">
-            <IconButton onClick={refresh} disabled={loading} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
+    <div className="min-h-screen bg-[#E6ECE6] font-sans text-gray-900 pb-20 -m-8">
+      
+      {/* 1. Global Header */}
+      <header className="max-w-7xl mx-auto px-6 pt-8 pb-6 flex justify-between items-end border-b border-gray-200/50 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[#1C1C1E]">Portfolio Overview</h1>
+          <p className="text-gray-500 font-medium mt-1">Real-time covenant compliance across all active loans</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 cursor-help group relative">
+          <ShieldCheck size={16} className="text-[#00C255]" />
+          <span className="text-xs font-bold text-gray-700 tracking-wide uppercase">Blockchain Verified</span>
+          
+          {/* Tooltip */}
+          <div className="absolute top-full right-0 mt-2 w-64 bg-[#1C1C1E] text-white text-xs p-3 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            All compliance events are cryptographically timestamped on Polygon.
+          </div>
+        </div>
+      </header>
 
-      {/* Stats Grid */}
-      {loading ? (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Skeleton variant="rounded" height={120} />
-            </Grid>
-          ))}
-        </Grid>
-      ) : (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Total Loans"
-              value={stats.totalLoans}
-              subtitle="Active facilities"
-              icon={<LoanIcon />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Total Exposure"
-              value={formatCurrency(stats.totalExposure)}
-              subtitle="Outstanding balance"
-              icon={<TrendingUpIcon />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Compliance Rate"
-              value={`${stats.complianceRate.toFixed(0)}%`}
-              subtitle={`${stats.greenCount} of ${stats.totalLoans} compliant`}
-              icon={<CheckIcon />}
-              status="GREEN"
-              trend={{ value: 5, positive: true }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="At Risk"
-              value={formatCurrency(stats.atRiskExposure)}
-              subtitle={`${stats.amberCount + stats.redCount} loans need attention`}
-              icon={<WarningIcon />}
-              status="AMBER"
-            />
-          </Grid>
-        </Grid>
-      )}
+      <main className="max-w-7xl mx-auto px-6 flex flex-col gap-10">
+        
+        {/* ROW 2: CRITICAL RISK SUMMARY */}
+        <section>
+          <div className="flex items-center gap-4 mb-4">
+             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Risk Summary</h2>
+             <div className="h-px bg-gray-200 flex-1" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+            {/* Left: Headroom (Previously Right) */}
+            <div className="lg:col-span-1">
+               <CurrentBalanceCard />
+            </div>
 
-      {/* Status Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ borderLeft: 4, borderColor: 'success.main' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    bgcolor: 'rgba(34, 197, 94, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <CheckIcon sx={{ color: 'success.main' }} />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h3" fontWeight={700} color="success.main">
-                    {stats.greenCount}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Compliant Loans
-                  </Typography>
-                </Box>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={(stats.greenCount / stats.totalLoans) * 100}
-                color="success"
-                sx={{ mt: 2, height: 6, borderRadius: 3 }}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
+            {/* Middle: Health Score */}
+            <div className="lg:col-span-1">
+               <AnalyticsCard data={healthData} />
+            </div>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ borderLeft: 4, borderColor: 'warning.main' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    bgcolor: 'rgba(245, 158, 11, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <WarningIcon sx={{ color: 'warning.main' }} />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h3" fontWeight={700} color="warning.main">
-                    {stats.amberCount}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Early Warning
-                  </Typography>
-                </Box>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={(stats.amberCount / stats.totalLoans) * 100}
-                color="warning"
-                sx={{ mt: 2, height: 6, borderRadius: 3 }}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
+            {/* Right: Portfolio Compliance (Previously Left, now Mint styled) */}
+            <div className="lg:col-span-1">
+               <StatisticsCard total="145 Active" points={complianceData} />
+            </div>
+          </div>
+        </section>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ borderLeft: 4, borderColor: 'error.main' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    bgcolor: 'rgba(239, 68, 68, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ErrorIcon sx={{ color: 'error.main' }} />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h3" fontWeight={700} color="error.main">
-                    {stats.redCount}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Breach Detected
-                  </Typography>
-                </Box>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={(stats.redCount / stats.totalLoans) * 100}
-                color="error"
-                sx={{ mt: 2, height: 6, borderRadius: 3 }}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        {/* ROW 3: TREND ANALYSIS */}
+        <section>
+          <div className="flex items-center gap-4 mb-4">
+             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Trend Analysis</h2>
+             <div className="h-px bg-gray-200 flex-1" />
+          </div>
 
-      {/* Loans Table */}
-      {loading ? (
-        <Skeleton variant="rounded" height={300} />
-      ) : (
-        <LoanTable loans={loans} />
-      )}
-    </Box>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <SalesStatisticsCard />
+             <MarketForecastCard />
+          </div>
+        </section>
+
+        {/* ROW 4: OPERATIONAL ACTIVITY */}
+        <section>
+          <div className="flex items-center gap-4 mb-4">
+             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Operational Activity</h2>
+             <div className="h-px bg-gray-200 flex-1" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+             <RecentTransactionsCard />
+             <PaymentTemplatesCard total="$842M" users={agreements} />
+          </div>
+        </section>
+
+      </main>
+    </div>
   );
 }

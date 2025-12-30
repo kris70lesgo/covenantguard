@@ -3,40 +3,7 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  AppBar,
-  Typography,
-  IconButton,
-  Divider,
-  Avatar,
-  Chip,
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  CloudUpload as UploadIcon,
-  AccountBalance as LoanIcon,
-  Assessment as PortfolioIcon,
-  VerifiedUser as ShieldIcon,
-  Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-} from '@mui/icons-material';
-
-const drawerWidth = 260;
-
-const menuItems = [
-  { text: 'Portfolio', icon: <DashboardIcon />, path: '/' },
-  { text: 'Upload Document', icon: <UploadIcon />, path: '/upload' },
-  { text: 'Loans', icon: <LoanIcon />, path: '/loans' },
-  { text: 'Reports', icon: <PortfolioIcon />, path: '/reports' },
-];
+import { LayoutDashboard, UploadCloud, PieChart, FileBarChart, Zap, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 interface SidebarProps {
   children: React.ReactNode;
@@ -44,239 +11,124 @@ interface SidebarProps {
 
 export default function Sidebar({ children }: SidebarProps) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
   };
 
-  const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Logo */}
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <ShieldIcon sx={{ color: 'white', fontSize: 24 }} />
-        </Box>
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-            CovenantGuard
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Loan Monitoring
-          </Typography>
-        </Box>
-      </Box>
-
-      <Divider />
-
-      {/* Navigation */}
-      <List sx={{ flex: 1, px: 1, py: 2 }}>
-        {menuItems.map((item) => {
-          const isActive = pathname === item.path;
-          return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                component={Link}
-                href={item.path}
-                sx={{
-                  borderRadius: 2,
-                  bgcolor: isActive ? 'primary.main' : 'transparent',
-                  color: isActive ? 'white' : 'text.primary',
-                  '&:hover': {
-                    bgcolor: isActive ? 'primary.dark' : 'action.hover',
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    color: isActive ? 'white' : 'text.secondary',
-                    minWidth: 40,
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{ fontWeight: isActive ? 600 : 400 }}
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
-
-      <Divider />
-
-      {/* Blockchain Status */}
-      <Box sx={{ p: 2 }}>
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            bgcolor: 'rgba(34, 197, 94, 0.1)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                bgcolor: 'success.main',
-                animation: 'pulse 2s infinite',
-              }}
-            />
-            <Typography variant="caption" fontWeight={600}>
-              Polygon Amoy
-            </Typography>
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            Blockchain Connected
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* User */}
-      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
-            S
-          </Avatar>
-          <Box>
-            <Typography variant="body2" fontWeight={500}>
-              Sarah Chen
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Loan Officer
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
-  );
+  const navItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { label: 'Upload Financials', icon: UploadCloud, path: '/upload' },
+    { label: 'Portfolio', icon: PieChart, path: '/loans' },
+    { label: 'Reports', icon: FileBarChart, path: '/reports' },
+  ];
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* App Bar - Mobile */}
-      <AppBar
-        position="fixed"
-        sx={{
-          display: { md: 'none' },
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          boxShadow: 1,
-        }}
+    <>
+      <aside 
+        className={`
+          bg-white h-screen fixed left-0 top-0 border-r border-gray-100 flex flex-col z-20
+          transition-all duration-300 ease-in-out
+          ${isCollapsed ? 'w-[64px]' : 'w-[240px]'}
+        `}
       >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
+        {/* Logo Area */}
+        <div className={`
+          flex items-center mb-1 transition-all duration-300
+          ${isCollapsed ? 'flex-col justify-center py-4 px-0 gap-4' : 'justify-between px-6 py-6'}
+        `}>
+          <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+              <Zap size={12} fill="currentColor" />
+            </div>
+            {!isCollapsed && (
+              <span className="text-sm font-bold text-gray-800 tracking-tight whitespace-nowrap overflow-hidden opacity-100 transition-opacity duration-200">
+                LenderFin
+              </span>
+            )}
+          </div>
+
+          {/* Toggle Button */}
+          <button 
+            onClick={toggleSidebar}
+            className={`
+              text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-md transition-colors
+            `}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <MenuIcon />
-          </IconButton>
-          <ShieldIcon sx={{ color: 'primary.main', mr: 1 }} />
-          <Typography variant="h6" fontWeight={600}>
-            CovenantGuard
-          </Typography>
-        </Toolbar>
-      </AppBar>
+            {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+        </div>
 
-      {/* Sidebar - Mobile */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-          },
-        }}
-      >
-        {drawerContent}
-      </Drawer>
+        {/* Navigation */}
+        <nav className={`flex-1 space-y-1 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+          {navItems.map((item, index) => {
+            const isActive = pathname === item.path;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={index}
+                href={item.path}
+                className={`
+                  flex items-center rounded-lg cursor-pointer transition-all duration-200 group relative
+                  ${isCollapsed ? 'justify-center py-3 px-0' : 'gap-3 px-4 py-2'}
+                  ${isActive 
+                    ? 'bg-primary text-white shadow-sm shadow-indigo-100' 
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}
+                `}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <span className={`
+                  ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100 transition-opacity'}
+                  flex-shrink-0
+                `}>
+                  <Icon size={16} />
+                </span>
+                
+                {!isCollapsed && (
+                  <span className="text-[12px] font-medium tracking-wide whitespace-nowrap overflow-hidden transition-all duration-300 opacity-100 block">
+                    {item.label}
+                  </span>
+                )}
+                
+                {/* Tooltip for collapsed state */}
+                {isCollapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                    {item.label}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
-      {/* Sidebar - Desktop */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-            borderRight: '1px solid',
-            borderColor: 'divider',
-          },
-        }}
-        open
-      >
-        {drawerContent}
-      </Drawer>
+        {/* Footer / Profile Placeholder */}
+        <div className={`p-6 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-6'}`}>
+          <div className={`
+            flex items-center rounded-lg bg-gray-50/50 border border-gray-100/50 transition-all duration-300 overflow-hidden
+            ${isCollapsed ? 'justify-center p-2' : 'gap-3 p-2'}
+          `}>
+            <div className="w-7 h-7 rounded-full bg-gray-200 flex-shrink-0" />
+            {!isCollapsed && (
+              <div className="flex flex-col overflow-hidden min-w-0">
+                <span className="text-[11px] font-semibold text-gray-700 leading-tight truncate">Jane Doe</span>
+                <span className="text-[9px] text-gray-400 leading-tight mt-0.5 truncate">Credit Analyst</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
 
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          bgcolor: 'background.default',
-          minHeight: '100vh',
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          mt: { xs: 8, md: 0 },
-        }}
-      >
-        {/* Top Bar */}
-        <Box
-          sx={{
-            display: { xs: 'none', md: 'flex' },
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 3,
-            py: 2,
-            borderBottom: 1,
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              {new Date().toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Chip
-              size="small"
-              label="3 Alerts"
-              color="warning"
-              variant="outlined"
-            />
-            <IconButton>
-              <NotificationsIcon />
-            </IconButton>
-          </Box>
-        </Box>
-
-        {/* Page Content */}
-        <Box sx={{ p: 3 }}>{children}</Box>
-      </Box>
-    </Box>
+      {/* Main content area with responsive margin */}
+      <main className={`
+        transition-all duration-300 ease-in-out
+        ${isCollapsed ? 'ml-[64px]' : 'ml-[240px]'}
+      `}>
+        <div className="p-8">
+          {children}
+        </div>
+      </main>
+    </>
   );
 }
