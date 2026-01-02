@@ -39,3 +39,39 @@ export interface StatisticsData {
   label: string;
   value: number;
 }
+
+// Loan Management Types
+export enum LoanStatus {
+  COMPLIANT = 'Compliant',
+  WARNING = 'Warning',
+  BREACH = 'Breach',
+}
+
+export interface LoanFacility {
+  loanId: string;
+  borrowerName: string;
+  covenantType: string;
+  currentRatio: number;
+  limitRatio: number;
+  status: LoanStatus;
+  outstandingAmount: number;
+  creditLimit: number;
+  lastTestDate: string;
+  nextTestDate: string;
+}
+
+export interface FilterState {
+  status: LoanStatus[];
+  covenantTypes: string[];
+  ratioMin: string;
+  ratioMax: string;
+  amountMin: string;
+  amountMax: string;
+  dateFrom: string;
+  dateTo: string;
+}
+
+export interface SortConfig {
+  field: keyof LoanFacility;
+  direction: 'asc' | 'desc';
+}

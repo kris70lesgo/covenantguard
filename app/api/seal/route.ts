@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { createSupabaseAdmin } from '@/lib/supabase';
 import { calculateDebtToEbitda, generateComplianceHash } from '@/lib/covenant-engine';
+import { 
+  rateLimit, 
+  validateLoanId, 
+  validateNumber,
+  sanitizeError,
+  addSecurityHeaders,
+  logSecurityEvent 
+} from '@/lib/security';
 
 // ABI for the CovenantRegistry contract (minimal interface)
 const COVENANT_REGISTRY_ABI = [
@@ -14,14 +22,35 @@ const CONTRACT_ADDRESS = process.env.COVENANT_REGISTRY_ADDRESS || '';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimitResponse = rateLimit(request);
+    if (rateLimitResponse) return addSecurityHeaders(rateLimitResponse);
+
     const body = await request.json();
     const { loanId, documentId, totalDebt, ebitda, covenantLimit = 3.5 } = body;
 
-    if (!loanId || totalDebt === undefined || ebitda === undefined) {
-      return NextResponse.json(
-        { error: 'Missing required fields: loanId, totalDebt, ebitda' },
+    // Input validation
+    if (!loanId || !validateLoanId(loanId)) {
+      logSecurityEvent('Invalid loan ID in seal', { loanId });
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Invalid loanId format' },
         { status: 400 }
-      );
+      ));
+    }
+
+    if (!validateNumber(totalDebt, 0, 1e15) || !validateNumber(ebitda, 0.01, 1e15)) {
+      logSecurityEvent('Invalid financial data in seal', { totalDebt, ebitda });
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Invalid financial data: totalDebt and ebitda must be valid positive numbers' },
+        { status: 400 }
+      ));
+    }
+
+    if (!validateNumber(covenantLimit, 0.1, 100)) {
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Invalid covenant limit' },
+        { status: 400 }
+      ));
     }
 
     // Calculate covenant result
@@ -127,7 +156,7 @@ export async function POST(request: NextRequest) {
         .eq('id', documentId);
     }
 
-    return NextResponse.json({
+    return addSecurityHeaders(NextResponse.json({
       success: true,
       eventId,
       loanId,
@@ -143,24 +172,37 @@ export async function POST(request: NextRequest) {
         explorerUrl: txHash ? `https://www.oklink.com/amoy/tx/${txHash}` : null,
       },
       timestamp,
-    });
-  } catch (error: any) {
-    console.error('Seal error:', error);
-    return NextResponse.json(
-      { error: `Failed to seal compliance event: ${error.message}` },
+    }));
+  } catch (error: unknown) {
+    logSecurityEvent('Seal error', { error: sanitizeError(error) });
+    return addSecurityHeaders(NextResponse.json(
+      { error: sanitizeError(error) },
       { status: 500 }
-    );
+    ));
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimitResponse = rateLimit(request);
+    if (rateLimitResponse) return addSecurityHeaders(rateLimitResponse);
+
     const { searchParams } = new URL(request.url);
     const loanId = searchParams.get('loanId');
 
+    // Validate loanId if provided
+    if (loanId && !validateLoanId(loanId)) {
+      logSecurityEvent('Invalid loan ID in seal GET', { loanId });
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Invalid loanId format' },
+        { status: 400 }
+      ));
+    }
+
     const supabase = createSupabaseAdmin();
 
-    let query = supabase.from('compliance_events').select('*');
+    let query = supabase.from('compliance_events').select('*').limit(100); // Prevent large queries
     
     if (loanId) {
       query = query.eq('loan_id', loanId);
@@ -169,14 +211,22 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query.order('timestamp', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logSecurityEvent('Database error in seal GET', { error: error.message });
+      return addSecurityHeaders(NextResponse.json(
+        { error: sanitizeError(error) },
+        { status: 500 }
+      ));
     }
 
-    return NextResponse.json({
+    return addSecurityHeaders(NextResponse.json({
       success: true,
       events: data || [],
-    });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    }));
+  } catch (error: unknown) {
+    logSecurityEvent('Seal GET error', { error: sanitizeError(error) });
+    return addSecurityHeaders(NextResponse.json(
+      { error: sanitizeError(error) },
+      { status: 500 }
+    ));
   }
 }

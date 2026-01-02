@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase';
+import { 
+  rateLimit, 
+  validateDocumentId, 
+  sanitizeError,
+  addSecurityHeaders,
+  logSecurityEvent 
+} from '@/lib/security';
 
 const OCR_API_KEY = process.env.OCR_SPACE_API_KEY;
 const OCR_API_URL = 'https://api.ocr.space/parse/image';
+const MAX_OCR_TEXT_LENGTH = 100000; // Prevent memory issues
 
 interface OCRResult {
   ParsedResults?: Array<{
@@ -93,14 +101,48 @@ function parseFinancialData(text: string): {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimitResponse = rateLimit(request);
+    if (rateLimitResponse) return addSecurityHeaders(rateLimitResponse);
+
     const body = await request.json();
     const { documentId, fileUrl, base64File } = body;
 
+    // Validate documentId if provided
+    if (documentId && !validateDocumentId(documentId)) {
+      logSecurityEvent('Invalid document ID in OCR', { documentId });
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Invalid documentId format' },
+        { status: 400 }
+      ));
+    }
+
+    // Validate fileUrl format
+    if (fileUrl) {
+      try {
+        const url = new URL(fileUrl);
+        // Only allow HTTPS for security
+        if (url.protocol !== 'https:') {
+          logSecurityEvent('Non-HTTPS URL in OCR', { fileUrl });
+          return addSecurityHeaders(NextResponse.json(
+            { error: 'Only HTTPS URLs are allowed' },
+            { status: 400 }
+          ));
+        }
+      } catch {
+        logSecurityEvent('Invalid URL in OCR', { fileUrl });
+        return addSecurityHeaders(NextResponse.json(
+          { error: 'Invalid file URL' },
+          { status: 400 }
+        ));
+      }
+    }
+
     if (!OCR_API_KEY) {
-      return NextResponse.json(
-        { error: 'OCR API key not configured' },
-        { status: 500 }
-      );
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'OCR service not configured' },
+        { status: 503 }
+      ));
     }
 
     let ocrText = '';
@@ -160,18 +202,18 @@ export async function POST(request: NextRequest) {
     // If we couldn't extract data, return mock data for demo
     if (!parsedData.totalDebt || !parsedData.ebitda) {
       console.log('Could not extract financial data, using demo values');
-      return NextResponse.json({
+      return addSecurityHeaders(NextResponse.json({
         success: true,
         ocrSuccess,
-        rawText: ocrText,
+        rawText: ocrText.slice(0, 1000), // Limit response size
         extractedData: {
           totalDebt: 14000000,
           ebitda: 3000000,
           confidence: 0.92,
-          rawText: ocrText || 'Demo mode - no OCR text available',
+          rawText: ocrText ? ocrText.slice(0, 500) : 'Demo mode - no OCR text available',
         },
         demo: true,
-      });
+      }));
     }
 
     // Update document in database if we have a documentId
@@ -180,32 +222,32 @@ export async function POST(request: NextRequest) {
       await supabase
         .from('documents')
         .update({
-          extracted_text: ocrText,
+          extracted_text: ocrText.slice(0, MAX_OCR_TEXT_LENGTH),
           ocr_confidence: parsedData.confidence,
           status: 'extracted',
         })
         .eq('id', documentId);
     }
 
-    return NextResponse.json({
+    return addSecurityHeaders(NextResponse.json({
       success: true,
       ocrSuccess,
-      rawText: ocrText,
+      rawText: ocrText.slice(0, 1000), // Limit response size
       extractedData: {
         totalDebt: parsedData.totalDebt,
         ebitda: parsedData.ebitda,
         confidence: parsedData.confidence,
-        rawText: ocrText,
+        rawText: ocrText.slice(0, 500),
       },
       demo: false,
-    });
-  } catch (error: any) {
-    console.error('OCR error:', error);
+    }));
+  } catch (error: unknown) {
+    logSecurityEvent('OCR error', { error: sanitizeError(error) });
     
-    // Return demo data on error
-    return NextResponse.json({
+    // Return demo data on error (don't expose error details)
+    return addSecurityHeaders(NextResponse.json({
       success: true,
-      error: error.message,
+      error: sanitizeError(error),
       extractedData: {
         totalDebt: 14000000,
         ebitda: 3000000,
@@ -213,6 +255,6 @@ export async function POST(request: NextRequest) {
         rawText: 'Demo mode - OCR error occurred',
       },
       demo: true,
-    });
+    }));
   }
 }

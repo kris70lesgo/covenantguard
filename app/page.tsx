@@ -8,6 +8,7 @@ import MarketForecastCard from '@/components/MarketForecastCard';
 import StatisticsCard from '@/components/Statistics';
 import AnalyticsCard from '@/components/AnalyticsCard';
 import PaymentTemplatesCard from '@/components/PaymentTemplateCard';
+import ExpandableChatDemo from '@/components/expandablechatbot';
 import { AnalyticsData, StatisticsData, User } from '@/types';
 import { ShieldCheck } from 'lucide-react';
 
@@ -112,6 +113,9 @@ export default function PortfolioDashboard() {
         </section>
 
       </main>
+      
+      {/* Expandable Chatbot */}
+      <ExpandableChatDemo />
     </div>
   );
 }

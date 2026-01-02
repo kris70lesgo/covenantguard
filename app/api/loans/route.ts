@@ -1,21 +1,33 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Loan, CovenantStatus } from '@/lib/types';
+import { 
+  rateLimit, 
+  validateNumber,
+  sanitizeError,
+  addSecurityHeaders,
+  logSecurityEvent 
+} from '@/lib/security';
 
 // GET /api/loans - Fetch all loans with aggregated data
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Fetch loans from Supabase
+    // Rate limiting
+    const rateLimitResponse = rateLimit(request);
+    if (rateLimitResponse) return addSecurityHeaders(rateLimitResponse);
+
+    // Fetch loans from Supabase with limit
     const { data: dbLoans, error } = await supabase
       .from('loans')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(1000); // Prevent massive queries
 
     if (error) {
-      console.error('Supabase error:', error);
+      logSecurityEvent('Supabase error in loans GET', { error: error.message, code: error.code });
       // Return empty array if table doesn't exist yet
       if (error.code === '42P01') {
-        return NextResponse.json({ loans: [], source: 'empty' });
+        return addSecurityHeaders(NextResponse.json({ loans: [], source: 'empty' }));
       }
       throw error;
     }
@@ -47,24 +59,43 @@ export async function GET() {
       isSealed: Boolean(loan.is_sealed),
     }));
 
-    return NextResponse.json({
+    return addSecurityHeaders(NextResponse.json({
       loans,
       source: 'database',
       count: loans.length,
-    });
+    }));
   } catch (error) {
-    console.error('Error fetching loans:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch loans', loans: [] },
+    logSecurityEvent('Error fetching loans', { error: sanitizeError(error) });
+    return addSecurityHeaders(NextResponse.json(
+      { error: sanitizeError(error), loans: [] },
       { status: 500 }
-    );
+    ));
   }
 }
 
 // POST /api/loans - Create a new loan
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimitResponse = rateLimit(request);
+    if (rateLimitResponse) return addSecurityHeaders(rateLimitResponse);
+
     const body = await request.json();
+    
+    // Input validation
+    if (!body.borrower || typeof body.borrower !== 'string') {
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Invalid borrower name' },
+        { status: 400 }
+      ));
+    }
+
+    if (!validateNumber(body.loanAmount, 1, 1e15)) {
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Invalid loan amount' },
+        { status: 400 }
+      ));
+    }
     
     const { data, error } = await supabase
       .from('loans')
@@ -89,12 +120,12 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, loan: data });
+    return addSecurityHeaders(NextResponse.json({ success: true, loan: data }));
   } catch (error) {
-    console.error('Error creating loan:', error);
-    return NextResponse.json(
-      { error: 'Failed to create loan' },
+    logSecurityEvent('Error creating loan', { error: sanitizeError(error) });
+    return addSecurityHeaders(NextResponse.json(
+      { error: sanitizeError(error) },
       { status: 500 }
-    );
+    ));
   }
 }
