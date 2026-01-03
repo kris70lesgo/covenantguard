@@ -135,7 +135,7 @@ const StatItem = ({
 
   return (
     <div className="flex flex-col px-6 py-3 lg:py-0 flex-1 lg:border-r border-gray-100 last:border-none">
-      <dd className="text-2xl font-semibold text-gray-900 tracking-tight tabular-nums flex items-baseline">
+      <dd className="text-2xl font-medium text-gray-900 tracking-tight tabular-nums flex items-baseline">
         {prefix && <span className="text-base text-gray-400 mr-0.5 font-medium">{prefix}</span>}
         {count.toFixed(decimals)}
         {suffix && <span className="text-base text-gray-400 ml-0.5 font-medium">{suffix}</span>}
@@ -171,7 +171,7 @@ export default function ReportsPage() {
       
       {/* 1. Page Header */}
       <header className="max-w-7xl mx-auto px-6 py-8 border-b border-transparent">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Reports & Export</h1>
+        <h1 className="text-2xl font-medium text-gray-900 tracking-tight">Reports & Export</h1>
         <p className="mt-1 text-sm text-gray-500 max-w-2xl">
           Generate compliance audit logs and export raw portfolio performance data.
         </p>
@@ -277,12 +277,12 @@ export default function ReportsPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider w-32">Event ID</th>
-                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Entity & Loan</th>
-                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Covenant Type</th>
-                    <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Exposure</th>
-                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider w-32">Date</th>
-                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider w-32">Status</th>
+                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider w-32">Event ID</th>
+                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Entity & Loan</th>
+                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Covenant Type</th>
+                    <th scope="col" className="px-5 py-2.5 text-right text-[10px] font-medium text-gray-500 uppercase tracking-wider">Exposure</th>
+                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider w-32">Date</th>
+                    <th scope="col" className="px-5 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider w-32">Status</th>
                     <th scope="col" className="relative px-5 py-2.5">
                       <span className="sr-only">Actions</span>
                     </th>

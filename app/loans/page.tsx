@@ -75,7 +75,7 @@ export default function LoansPage() {
       <main className="flex-grow p-6 sm:p-8 max-w-[1600px] mx-auto w-full flex flex-col h-screen">
         
         <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-900">Loan Facilities</h1>
+          <h1 className="text-xl font-medium text-gray-900">Loan Facilities</h1>
           <p className="text-sm text-gray-500 mt-1">Manage compliance, covenants, and testing schedules across your portfolio.</p>
         </div>
 

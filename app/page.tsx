@@ -45,12 +45,12 @@ export default function PortfolioDashboard() {
       {/* 1. Global Header */}
       <header className="max-w-7xl mx-auto px-6 pt-8 pb-6 flex justify-between items-end border-b border-gray-200/50 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#1C1C1E]">Portfolio Overview</h1>
+          <h1 className="text-3xl font-medium tracking-tight text-[#1C1C1E]">Portfolio Overview</h1>
           <p className="text-gray-500 font-medium mt-1">Real-time covenant compliance across all active loans</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 cursor-help group relative">
           <ShieldCheck size={16} className="text-[#00C255]" />
-          <span className="text-xs font-bold text-gray-700 tracking-wide uppercase">Blockchain Verified</span>
+          <span className="text-xs font-medium text-gray-700 tracking-wide uppercase">Blockchain Verified</span>
           
           {/* Tooltip */}
           <div className="absolute top-full right-0 mt-2 w-64 bg-[#1C1C1E] text-white text-xs p-3 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
@@ -64,7 +64,7 @@ export default function PortfolioDashboard() {
         {/* ROW 2: CRITICAL RISK SUMMARY */}
         <section>
           <div className="flex items-center gap-4 mb-4">
-             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Risk Summary</h2>
+             <h2 className="text-sm font-medium uppercase tracking-wider text-gray-400">Risk Summary</h2>
              <div className="h-px bg-gray-200 flex-1" />
           </div>
           
@@ -89,7 +89,7 @@ export default function PortfolioDashboard() {
         {/* ROW 3: TREND ANALYSIS */}
         <section>
           <div className="flex items-center gap-4 mb-4">
-             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Trend Analysis</h2>
+             <h2 className="text-sm font-medium uppercase tracking-wider text-gray-400">Trend Analysis</h2>
              <div className="h-px bg-gray-200 flex-1" />
           </div>
 
@@ -102,7 +102,7 @@ export default function PortfolioDashboard() {
         {/* ROW 4: OPERATIONAL ACTIVITY */}
         <section>
           <div className="flex items-center gap-4 mb-4">
-             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Operational Activity</h2>
+             <h2 className="text-sm font-medium uppercase tracking-wider text-gray-400">Operational Activity</h2>
              <div className="h-px bg-gray-200 flex-1" />
           </div>
 

@@ -137,7 +137,7 @@ export default function LoanDetailPage({ params }: LoanDetailPageProps) {
                   Facility Amount
                 </Typography>
               </Box>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" fontWeight={500}>
                 {formatCurrency(loan.facilityAmount)}
               </Typography>
             </CardContent>
@@ -153,7 +153,7 @@ export default function LoanDetailPage({ params }: LoanDetailPageProps) {
                   Outstanding
                 </Typography>
               </Box>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" fontWeight={500}>
                 {formatCurrency(loan.outstandingAmount)}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -171,7 +171,7 @@ export default function LoanDetailPage({ params }: LoanDetailPageProps) {
               </Typography>
               <Typography
                 variant="h5"
-                fontWeight={700}
+                fontWeight={500}
                 color={
                   loan.status === 'GREEN'
                     ? 'success.main'
@@ -195,7 +195,7 @@ export default function LoanDetailPage({ params }: LoanDetailPageProps) {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Maturity Date
               </Typography>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" fontWeight={500}>
                 {formatDate(loan.maturityDate)}
               </Typography>
             </CardContent>
@@ -208,39 +208,39 @@ export default function LoanDetailPage({ params }: LoanDetailPageProps) {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
+              <Typography variant="h6" fontWeight={500} gutterBottom>
                 Covenant Metrics
               </Typography>
               <Divider sx={{ my: 2 }} />
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography color="text.secondary">Debt/EBITDA Ratio</Typography>
-                <Typography fontWeight={600}>{loan.debtToEbitda.toFixed(2)}x</Typography>
+                <Typography fontWeight={500}>{loan.debtToEbitda.toFixed(2)}x</Typography>
               </Box>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography color="text.secondary">Max Allowed</Typography>
-                <Typography fontWeight={600}>{loan.covenantLimits.maxDebtToEbitda.toFixed(1)}x</Typography>
+                <Typography fontWeight={500}>{loan.covenantLimits.maxDebtToEbitda.toFixed(1)}x</Typography>
               </Box>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography color="text.secondary">Interest Coverage</Typography>
-                <Typography fontWeight={600}>{loan.interestCoverage.toFixed(2)}x</Typography>
+                <Typography fontWeight={500}>{loan.interestCoverage.toFixed(2)}x</Typography>
               </Box>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography color="text.secondary">Min Required</Typography>
-                <Typography fontWeight={600}>{loan.covenantLimits.minInterestCoverage.toFixed(1)}x</Typography>
+                <Typography fontWeight={500}>{loan.covenantLimits.minInterestCoverage.toFixed(1)}x</Typography>
               </Box>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography color="text.secondary">Current Ratio</Typography>
-                <Typography fontWeight={600}>{loan.currentRatio.toFixed(2)}</Typography>
+                <Typography fontWeight={500}>{loan.currentRatio.toFixed(2)}</Typography>
               </Box>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography color="text.secondary">Min Required</Typography>
-                <Typography fontWeight={600}>{loan.covenantLimits.minCurrentRatio.toFixed(1)}</Typography>
+                <Typography fontWeight={500}>{loan.covenantLimits.minCurrentRatio.toFixed(1)}</Typography>
               </Box>
             </CardContent>
           </Card>

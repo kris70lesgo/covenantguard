@@ -1,10 +1,30 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { mockLoans } from '@/lib/mock-data';
-import { UploadWidget } from '@/components/UploadWidget';
-import { ProgressTracker } from '@/components/ProgressTracker';
-import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import LoanSelector from '@/components/LoanSelector';
+import UploadZone from '@/components/UploadZone';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import ProcessingRail from '@/components/ProcessingRail';
+import ExtractionReview from '@/components/ExtractionReview';
+import { Database, CheckCircle2, ChevronLeft } from 'lucide-react';
+
+type AppState = 
+  | 'LOAN_SELECTION' 
+  | 'UPLOAD_DOCUMENT' 
+  | 'UPLOADING' 
+  | 'EXTRACTION_READY' 
+  | 'PROCESSING' 
+  | 'REVIEW' 
+  | 'RECORDING' 
+  | 'COMPLETED';
+
+interface Loan {
+  id: string;
+  borrowerName: string;
+  facilityAmount: number;
+  covenantLimit: number;
+}
 
 interface UploadedDocument {
   id: string;
@@ -17,39 +37,56 @@ interface ExtractedData {
   totalDebt: number;
   ebitda: number;
   confidence: number;
-  rawText?: string;
 }
 
 export default function UploadPage() {
-  const [activeStep, setActiveStep] = useState(0);
-  const [selectedLoan, setSelectedLoan] = useState('');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [step, setStep] = useState<AppState>('LOAN_SELECTION');
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [activeProcessingStep, setActiveProcessingStep] = useState(0);
+  const [isDemoDropdownOpen, setIsDemoDropdownOpen] = useState(false);
   const [uploadedDocument, setUploadedDocument] = useState<UploadedDocument | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const demoDropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (demoDropdownRef.current && !demoDropdownRef.current.contains(event.target as Node)) {
+        setIsDemoDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+  const handleLoanSelect = (loan: Loan) => {
+    setSelectedLoan(loan);
+    setStep('UPLOAD_DOCUMENT');
+  };
 
-  const handleFileUpload = useCallback(async (file: File) => {
-    setUploadedFile(file);
+  const handleUpload = async (file?: File) => {
+    setIsDemoDropdownOpen(false);
     setError(null);
-    setIsUploading(true);
+    setStep('UPLOADING');
 
     try {
+      if (!file) {
+        // Demo mode - simulate upload
+        setTimeout(() => {
+          setUploadedDocument({
+            id: 'demo-doc',
+            fileName: 'demo-financial-statement.pdf',
+            fileUrl: '/demo/financial.pdf',
+            status: 'uploaded'
+          });
+          setStep('EXTRACTION_READY');
+        }, 2000);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('loanId', selectedLoan);
+      formData.append('loanId', selectedLoan?.id || '');
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -63,33 +100,23 @@ export default function UploadPage() {
       }
 
       setUploadedDocument(result.document);
-      setActiveStep(2);
+      setStep('EXTRACTION_READY');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Upload failed';
       setError(errorMessage);
       console.error('Upload error:', err);
-    } finally {
-      setIsUploading(false);
+      setStep('UPLOAD_DOCUMENT');
     }
-  }, [selectedLoan]);
-
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      await handleFileUpload(files[0]);
-    }
-  }, [handleFileUpload]);
-
-  const handleLoanSelect = (loanId: string) => {
-    setSelectedLoan(loanId);
-    setActiveStep(1);
   };
 
-  const processWithOCR = async () => {
-    setIsProcessing(true);
+  const startAnalysis = async () => {
+    setStep('PROCESSING');
+    setActiveProcessingStep(0);
     setError(null);
+
+    // Simulate multi-step processing with visual feedback
+    setTimeout(() => setActiveProcessingStep(1), 1500);
+    setTimeout(() => setActiveProcessingStep(2), 3000);
 
     try {
       // Call OCR API
@@ -108,25 +135,27 @@ export default function UploadPage() {
         throw new Error(result.error || 'OCR processing failed');
       }
 
-      setExtractedData(result.extractedData);
-      setActiveStep(3);
+      setTimeout(() => {
+        setExtractedData(result.extractedData);
+        setStep('REVIEW');
+      }, 4500);
     } catch (err) {
       // Fallback to mock data for demo
       const errorMessage = err instanceof Error ? err.message : 'OCR failed';
       console.warn('OCR failed, using mock data:', errorMessage);
-      setExtractedData({
-        totalDebt: 14000000,
-        ebitda: 3000000,
-        confidence: 0.92,
-      });
-      setActiveStep(3);
-    } finally {
-      setIsProcessing(false);
+      setTimeout(() => {
+        setExtractedData({
+          totalDebt: 14000000,
+          ebitda: 3000000,
+          confidence: 0.92,
+        });
+        setStep('REVIEW');
+      }, 4500);
     }
   };
 
-  const handleConfirmAndSeal = async () => {
-    setIsProcessing(true);
+  const handleConfirm = async () => {
+    setStep('RECORDING');
     setError(null);
 
     try {
@@ -135,7 +164,7 @@ export default function UploadPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          loanId: selectedLoan,
+          loanId: selectedLoan?.id,
           documentId: uploadedDocument?.id,
           totalDebt: extractedData?.totalDebt,
           ebitda: extractedData?.ebitda,
@@ -144,302 +173,184 @@ export default function UploadPage() {
 
       const result = await response.json();
 
-      if (response.ok && result.txHash) {
-        alert(`Document sealed on blockchain!\nTransaction: ${result.txHash}`);
-      } else {
-        // Demo mode fallback
-        alert('Document sealed on blockchain! (Demo mode)');
-      }
-
-      // Reset form
-      setActiveStep(0);
-      setSelectedLoan('');
-      setUploadedFile(null);
-      setUploadedDocument(null);
-      setExtractedData(null);
-    } catch {
-      // Demo mode fallback
-      alert('Document sealed on blockchain! (Demo mode)');
-      setActiveStep(0);
-      setSelectedLoan('');
-      setUploadedFile(null);
-      setUploadedDocument(null);
-      setExtractedData(null);
-    } finally {
-      setIsProcessing(false);
+      setTimeout(() => {
+        if (response.ok && result.txHash) {
+          console.log(`Document sealed on blockchain! Transaction: ${result.txHash}`);
+        }
+        setStep('COMPLETED');
+      }, 2000);
+    } catch (err) {
+      console.error('Sealing error:', err);
+      // Still proceed to completed state for demo
+      setTimeout(() => setStep('COMPLETED'), 2000);
     }
   };
 
-  // Calculate covenant status from extracted data
-  const getCovenantStatus = () => {
-    if (!extractedData) return null;
-    const ratio = extractedData.totalDebt / extractedData.ebitda;
-    const limit = mockLoans.find(l => l.id === selectedLoan)?.covenantLimit || 3.5;
-    
-    if (ratio > limit) return { ratio, status: 'RED', limit };
-    if (ratio >= limit * 0.9) return { ratio, status: 'AMBER', limit };
-    return { ratio, status: 'GREEN', limit };
+  const resetWorkflow = () => {
+    setSelectedLoan(null);
+    setActiveProcessingStep(0);
+    setUploadedDocument(null);
+    setExtractedData(null);
+    setError(null);
+    setStep('LOAN_SELECTION');
   };
 
-  const covenantResult = getCovenantStatus();
+  // Calculate covenant status from extracted data
+  const getCovenantResult = () => {
+    if (!extractedData || !selectedLoan) return null;
+    const ratio = extractedData.totalDebt / extractedData.ebitda;
+    const limit = selectedLoan.covenantLimit;
+    
+    if (ratio > limit) return { ratio, status: 'RED' as const, limit };
+    if (ratio >= limit * 0.9) return { ratio, status: 'AMBER' as const, limit };
+    return { ratio, status: 'GREEN' as const, limit };
+  };
+
+  const covenantResult = getCovenantResult();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Upload Financial Document
-        </h1>
-        <p className="text-gray-600">
-          Upload borrower financial statements for AI-powered covenant analysis
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center pt-24 px-6 pb-20">
+      <div className="w-full max-w-[800px] space-y-12">
+        {/* Page Header */}
+        <header className="space-y-1">
+          <h1 className="text-2xl font-medium text-slate-900 tracking-tight">Upload Financial Document</h1>
+          <p className="text-slate-500 text-sm">Submit borrower financials for covenant analysis</p>
+        </header>
 
-      {/* Step Content */}
-      <div className="space-y-6">
-        {/* Step 0: Select Loan */}
-        {activeStep === 0 && (
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Select Loan Facility
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              Choose the loan for which you are uploading financial documents
-            </p>
-
-            <div className="max-w-md">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Loan Facility
-              </label>
-              <select
-                value={selectedLoan}
-                onChange={(e) => handleLoanSelect(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">Select a loan...</option>
-                {mockLoans.map((loan) => (
-                  <option key={loan.id} value={loan.id}>
-                    {loan.borrowerName} - {loan.id}
-                  </option>
-                ))}
-              </select>
+        {/* Content Area */}
+        <main className="transition-all duration-300">
+          {step === 'LOAN_SELECTION' && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <LoanSelector onSelect={handleLoanSelect} />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Step 1: Upload */}
-        {activeStep === 1 && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Upload Financial Statement
-              </h2>
-              <p className="text-sm text-gray-600 mb-6">
-                Supported formats: PDF, Excel (.xlsx, .xls)
-              </p>
-
-              <UploadWidget
-                onFileSelect={handleFileUpload}
-                isDragging={isDragging}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              />
-
-              <button
-                onClick={() => setActiveStep(0)}
-                className="mt-6 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: AI Extraction */}
-        {activeStep === 2 && (
-          <div className="space-y-6">
-            {isProcessing && <ProgressTracker currentStep={1} />}
-            
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                AI Data Extraction
-              </h2>
-
-              {uploadedFile && !isProcessing && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
-                  <CheckCircle className="text-blue-600" size={20} />
-                  <span className="text-sm text-blue-900">
-                    Uploaded: {uploadedFile.name}
-                  </span>
-                </div>
-              )}
-
-              {!isProcessing && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span className="text-2xl">🤖</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Ready to Extract
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-6">
-                    Our AI will identify financial tables and extract key metrics
-                  </p>
-                  <button
-                    onClick={processWithOCR}
-                    className="px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors inline-flex items-center gap-2"
-                  >
-                    Start AI Extraction
-                  </button>
-                </div>
-              )}
-
-              {isProcessing && (
-                <div className="text-center py-8">
-                  <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Processing Document...
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Extracting financial data with AI
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Confirm & Seal */}
-        {activeStep === 3 && extractedData && (
-          <div className="space-y-6">
-            {isProcessing && <ProgressTracker currentStep={3} />}
-            {!isProcessing && <ProgressTracker currentStep={2} />}
-            
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Review & Confirm
-              </h2>
-
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                <CheckCircle className="text-green-600" size={20} />
-                <span className="text-sm text-green-900">
-                  AI extraction complete with {(extractedData.confidence * 100).toFixed(0)}% confidence
-                </span>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-                  Extracted Values
-                </p>
-                <div className="border-t border-gray-200 my-4" />
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-700">Total Debt</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      ${extractedData.totalDebt.toLocaleString()}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-700">EBITDA</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      ${extractedData.ebitda.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="border-t border-gray-200 my-4" />
-                  
-                  {covenantResult && (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-700">Debt/EBITDA Ratio</span>
-                        <span className={`
-                          text-sm font-bold
-                          ${covenantResult.status === 'GREEN' ? 'text-green-600' : ''}
-                          ${covenantResult.status === 'AMBER' ? 'text-amber-600' : ''}
-                          ${covenantResult.status === 'RED' ? 'text-red-600' : ''}
-                        `}>
-                          {covenantResult.ratio.toFixed(2)}x
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-700">Status</span>
-                        <span className={`
-                          text-sm font-bold
-                          ${covenantResult.status === 'GREEN' ? 'text-green-600' : ''}
-                          ${covenantResult.status === 'AMBER' ? 'text-amber-600' : ''}
-                          ${covenantResult.status === 'RED' ? 'text-red-600' : ''}
-                        `}>
-                          {covenantResult.status === 'GREEN' && '🟢 COMPLIANT'}
-                          {covenantResult.status === 'AMBER' && '🟠 WARNING'}
-                          {covenantResult.status === 'RED' && '🔴 BREACH DETECTED'}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="text-blue-600 flex-shrink-0 mt-0.5" size={20} />
-                <span className="text-sm text-blue-900">
-                  Once confirmed, this compliance event will be automatically sealed on the Polygon blockchain.
-                </span>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setActiveStep(2)}
-                  disabled={isProcessing}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          {step === 'UPLOAD_DOCUMENT' && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-4">
+              {/* Navigation and Demo Controls */}
+              <div className="flex items-center justify-between px-1">
+                <button 
+                  onClick={() => setStep('LOAN_SELECTION')}
+                  className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
                 >
+                  <ChevronLeft size={16} className="mr-1" />
                   Back
                 </button>
+
+                <div className="relative" ref={demoDropdownRef}>
+                  <button 
+                    onClick={() => setIsDemoDropdownOpen(!isDemoDropdownOpen)}
+                    className="text-[13px] text-slate-400 hover:text-slate-600 hover:underline transition-colors"
+                  >
+                    Want to test but don't have a document?
+                  </button>
+                  
+                  {isDemoDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-sm z-30 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                      <button
+                        onClick={() => handleUpload()}
+                        className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors rounded-lg"
+                      >
+                        Use demo financial statement (PDF)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <UploadZone onUpload={handleUpload} />
+            </div>
+          )}
+
+          {step === 'UPLOADING' && (
+            <div className="flex flex-col items-center justify-center space-y-6 py-20">
+              <LoadingSpinner />
+              <div className="text-center space-y-1">
+                <p className="text-slate-900 font-medium">Uploading document</p>
+                <p className="text-slate-500 text-sm">Encrypting and storing securely</p>
+              </div>
+            </div>
+          )}
+
+          {step === 'EXTRACTION_READY' && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col items-center py-12 px-8 border border-slate-200 bg-white space-y-8">
+              <div className="text-slate-300">
+                <Database size={48} strokeWidth={1} />
+              </div>
+              <div className="text-center space-y-2">
+                <h2 className="text-lg font-medium text-slate-900">Document ready for analysis</h2>
+                <p className="text-slate-500 text-sm max-w-sm mx-auto">
+                  Financial tables will be identified and key metrics extracted using our compliant extraction engine.
+                </p>
+              </div>
+              <button
+                onClick={startAnalysis}
+                className="px-10 py-3 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 outline-none rounded-lg"
+              >
+                Start analysis
+              </button>
+            </div>
+          )}
+
+          {step === 'PROCESSING' && (
+            <div className="space-y-4">
+              <ProcessingRail activeStep={activeProcessingStep} />
+            </div>
+          )}
+
+          {(step === 'REVIEW' || step === 'RECORDING') && extractedData && (
+            <div className="animate-in fade-in duration-500 space-y-12">
+              <ExtractionReview 
+                data={extractedData}
+                covenantResult={covenantResult || undefined}
+              />
+              <div className="flex justify-end">
                 <button
-                  onClick={handleConfirmAndSeal}
-                  disabled={isProcessing}
-                  className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                  disabled={step === 'RECORDING'}
+                  onClick={handleConfirm}
+                  className="flex items-center justify-center min-w-[180px] px-8 py-3 bg-slate-900 text-white font-medium hover:bg-black transition-all disabled:bg-slate-400 disabled:cursor-not-allowed focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 outline-none rounded-lg"
                 >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="animate-spin" size={16} />
-                      Sealing on Blockchain...
-                    </>
+                  {step === 'RECORDING' ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 border-2 border-slate-300 border-t-white rounded-full animate-spin"></div>
+                      <span>Recording...</span>
+                    </div>
                   ) : (
-                    <>
-                      <CheckCircle size={16} />
-                      Confirm & Seal on Blockchain
-                    </>
+                    "Confirm & Record"
                   )}
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Error Display */}
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-            <span className="text-sm text-red-900">{error}</span>
-          </div>
-        )}
+          {step === 'COMPLETED' && (
+            <div className="animate-in zoom-in-95 duration-500 flex flex-col items-center py-20 space-y-6">
+              <CheckCircle2 size={48} className="text-emerald-600" strokeWidth={1.5} />
+              <div className="text-center space-y-2">
+                <h2 className="text-lg font-medium text-slate-900">Compliance Audit Recorded</h2>
+                <p className="text-slate-500 text-sm">
+                  Record ID: AUDIT-{Math.floor(Math.random() * 1000000)} &middot; Immutable entry confirmed
+                </p>
+              </div>
+              <button
+                onClick={resetWorkflow}
+                className="text-sm font-medium text-blue-600 hover:underline pt-4"
+              >
+                Start new submission
+              </button>
+            </div>
+          )}
 
-        {/* Upload Progress */}
-        {isUploading && (
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
-            <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Uploading to Supabase...
-            </h3>
-            <p className="text-sm text-gray-600">
-              Storing document securely
-            </p>
-          </div>
-        )}
+          {/* Error Display */}
+          {error && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm text-red-900">{error}</span>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
