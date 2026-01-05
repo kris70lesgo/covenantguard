@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
-import { ArrowUpRight } from 'lucide-react';
 import { StatisticsData } from '../types';
 
 interface StatisticsCardProps {
@@ -95,25 +94,17 @@ const StatisticsCard: React.FC<StatisticsCardProps> = ({ total, points }) => {
   const activeValue = points[highlightIndex]?.value;
 
   return (
-    <div className="bg-[#FF4C29] rounded-3xl p-8 shadow-sm flex flex-col h-[360px] text-white relative overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-orange-200/50 hover:shadow-lg">
-       {/* Background Decoration */}
-       <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B4A] to-[#FF4C29] z-0" />
-       
-       <div className="relative z-10 flex flex-col h-full pointer-events-none"> {/* Content wrapper */}
-        {/* Header */}
+    <div className="bg-[#8df4a8] rounded-3xl p-6 shadow-sm flex flex-col h-[320px] text-gray-900 relative overflow-hidden border border-[#6ed58c]/60">
+      <div className="relative z-10 flex flex-col h-full pointer-events-none">
         <div className="flex justify-between items-start mb-2 pointer-events-auto">
-          <h3 className="font-medium text-lg text-white/90">Statistics</h3>
-          <button className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors cursor-pointer">
-            <ArrowUpRight className="w-5 h-5 text-white" />
-          </button>
+          <h3 className="font-medium text-sm text-gray-900">Active Loans</h3>
         </div>
 
-        {/* Amount */}
-        <div className="mb-8 pointer-events-auto">
-          <div className="text-4xl font-bold tracking-tight transition-all duration-300">
+        <div className="mb-6 pointer-events-auto">
+          <div className="text-3xl font-semibold tracking-tight transition-all duration-300">
              {total}
           </div>
-          <div className="text-sm text-white/70 font-medium h-5">
+          <div className="text-xs text-gray-500 font-medium h-5">
             {isHovering ? `Value: ${activeValue}` : 'Weekly Overview'}
           </div>
         </div>
@@ -122,33 +113,33 @@ const StatisticsCard: React.FC<StatisticsCardProps> = ({ total, points }) => {
       {/* Interactive Chart Area */}
       <div 
         ref={containerRef}
-        className="absolute inset-x-8 bottom-8 top-32 z-20 cursor-crosshair touch-none"
+        className="absolute inset-x-6 bottom-6 top-28 z-20 cursor-crosshair touch-none"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
           {/* Vertical Grid Lines (Visual only) */}
-          <div className="absolute inset-0 flex justify-between pointer-events-none opacity-20">
+          <div className="absolute inset-0 flex justify-between pointer-events-none opacity-35">
             {points.map((_, i) => (
-              <div key={i} className="w-px h-full bg-white" />
+              <div key={i} className="w-px h-full bg-black/20" />
             ))}
           </div>
 
           {/* Highlight Column */}
           {highlightPoint && points.length > 1 && (
             <div 
-              className="absolute top-0 bottom-0 w-px bg-white/50 pointer-events-none transition-all duration-150 ease-out"
+              className="absolute top-0 bottom-0 w-px bg-black/35 pointer-events-none transition-all duration-150 ease-out"
               style={{ 
                 left: `${(highlightIndex / (points.length - 1)) * 100}%`,
               }}
             >
-              <div className="absolute top-0 -translate-x-1/2 w-12 h-full bg-gradient-to-b from-white/10 to-transparent" />
+              <div className="absolute top-0 -translate-x-1/2 w-12 h-full bg-gradient-to-b from-black/10 to-transparent" />
             </div>
           )}
 
            {/* Tooltip */}
            {highlightPoint && (
              <div 
-              className={`absolute bg-white text-gray-900 text-sm font-bold px-3 py-1.5 rounded-xl shadow-lg transform -translate-x-1/2 -translate-y-full mb-3 pointer-events-none transition-all duration-150 ease-out z-30
+              className={`absolute bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-md transform -translate-x-1/2 -translate-y-full mb-3 pointer-events-none transition-all duration-150 ease-out z-30
                 ${isHovering ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}
               `}
               style={{ 
@@ -169,33 +160,43 @@ const StatisticsCard: React.FC<StatisticsCardProps> = ({ total, points }) => {
               preserveAspectRatio="none"
               className="overflow-visible"
             >
-              {/* The Line */}
-              <path 
-                d={pathData.d} 
-                fill="none" 
-                stroke="white" 
-                strokeWidth="0.8" 
-                vectorEffect="non-scaling-stroke"
-                className="drop-shadow-md"
-              />
+              <defs>
+                <linearGradient id="stat-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0f0f0f" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#0f0f0f" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {pathData.d && (
+                <>
+                  <path d={`${pathData.d} L 100,40 L 0,40 Z`} fill="url(#stat-fill)" opacity="0.35" />
+                  <path 
+                    d={pathData.d} 
+                    fill="none" 
+                    stroke="#0f0f0f" 
+                    strokeWidth="2" 
+                    vectorEffect="non-scaling-stroke"
+                    strokeLinecap="round"
+                    className="drop-shadow-sm"
+                  />
+                </>
+              )}
               
-              {/* The Highlight Dot */}
               {highlightPoint && (
                 <circle 
                   cx={highlightPoint.x} 
                   cy={highlightPoint.y} 
-                  r="2" 
-                  fill="white"
-                  className={`drop-shadow-md transition-all duration-150 ease-out ${isHovering ? 'opacity-100' : 'opacity-0'}`}
+                  r="2.5" 
+                  fill="#0f0f0f"
+                  className={`drop-shadow-sm transition-all duration-150 ease-out ${isHovering ? 'opacity-100' : 'opacity-0'}`}
                 />
               )}
             </svg>
           </div>
 
           {/* X Axis Labels */}
-          <div className="absolute bottom-0 inset-x-0 flex justify-between text-xs font-medium text-white/60 pointer-events-none translate-y-6">
+          <div className="absolute bottom-0 inset-x-0 flex justify-between text-xs font-medium text-gray-500 pointer-events-none translate-y-6">
              {points.map((p, i) => (
-               <span key={i} className={`w-8 text-center transition-colors duration-200 ${i === highlightIndex && isHovering ? 'text-white scale-110' : ''}`}>
+               <span key={i} className={`w-8 text-center transition-colors duration-200 ${i === highlightIndex && isHovering ? 'text-gray-800' : ''}`}>
                  {p.label}
                </span>
              ))}

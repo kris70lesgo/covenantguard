@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowUpRight } from 'lucide-react';
 
 const MarketForecastCard: React.FC = () => {
   const [sliderVal, setSliderVal] = useState(28); 
@@ -24,31 +23,31 @@ const MarketForecastCard: React.FC = () => {
   const exposure = 28 + (sliderVal * 0.05);
 
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-soft flex flex-col md:flex-row gap-8 min-h-[420px] hover:-translate-y-1 transition-transform duration-500">
+    <div className="bg-white rounded-3xl p-6 shadow-sm flex flex-col md:flex-row gap-6 min-h-[360px] border border-gray-200/60">
       
       {/* LEFT: Timeline */}
       <div className="w-full md:w-[35%] flex flex-col relative pl-2">
          <div className="mb-8">
-            <div className="w-12 h-12 bg-card-mint rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                <div className="w-4 h-4 border-[3px] border-black rounded-full" />
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-gray-200">
+                <div className="w-4 h-4 border-[3px] border-gray-900 rounded-full" />
             </div>
-            <h3 className="font-bold text-2xl text-gray-900 leading-[1.1]">Risk<br/>Outlook</h3>
+            <h3 className="font-semibold text-sm text-gray-900 leading-[1.3] uppercase tracking-[0.18em]">Risk Outlook</h3>
          </div>
 
          <div className="flex-1 relative flex flex-col justify-between py-2">
              <div className="absolute left-[5.5px] top-2 bottom-2 w-[2px] bg-gray-100" />
              {timeline.map((item, i) => (
                 <div key={i} className="relative pl-6 group cursor-pointer">
-                    <div className={`absolute left-0 top-[5px] w-[13px] h-[13px] rounded-full border-[2.5px] z-10 transition-all duration-300
-                       ${item.active 
-                         ? 'bg-black border-black scale-110 shadow-lg' 
-                         : 'bg-white border-gray-200 group-hover:border-gray-400'}`} 
-                    />
+                                        <div className={`absolute left-0 top-[5px] w-[13px] h-[13px] rounded-full border-[2.5px] z-10 transition-all duration-300
+                                             ${item.active 
+                                                 ? 'bg-black border-black scale-110 shadow-lg' 
+                                                 : 'bg-white border-gray-300 group-hover:border-gray-500'}`} 
+                                        />
                     <div className="transition-opacity duration-300">
-                        <span className={`block font-bold text-sm mb-0.5 ${item.active ? 'text-black' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                        <span className={`block font-semibold text-xs mb-0.5 ${item.active ? 'text-black' : 'text-gray-600 group-hover:text-gray-800'}`}>
                             {item.year}
                         </span>
-                        <p className="text-xs text-gray-400 font-medium leading-snug whitespace-pre-line">
+                        <p className="text-xs text-gray-500 font-medium leading-snug whitespace-pre-line">
                             {item.label}
                         </p>
                     </div>
@@ -58,23 +57,23 @@ const MarketForecastCard: React.FC = () => {
       </div>
 
       {/* RIGHT: Stacked Cards */}
-      <div className="w-full md:w-[65%] flex flex-col gap-5">
+      <div className="w-full md:w-[65%] flex flex-col gap-4">
         
         {/* Volatility Card */}
-        <div className="bg-card-mint rounded-3xl p-6 flex flex-col justify-between h-[180px] relative overflow-hidden transition-transform hover:scale-[1.01] duration-300 shadow-sm">
+        <div className="bg-[#8ff4aa] rounded-3xl p-5 flex flex-col justify-between h-[170px] relative overflow-hidden border border-[#6fd68e]/70">
             <div className="flex justify-between items-start">
                 <div>
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-700 opacity-70">Volatility Index</h4>
-                    <div className="text-4xl font-bold mt-1 text-gray-900 tabular-nums tracking-tight">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-800/70">Volatility Index</h4>
+                    <div className="text-3xl font-semibold mt-1 text-gray-900 tabular-nums tracking-tight">
                         {volatility.toFixed(1)}
                     </div>
                 </div>
-                <ArrowUpRight size={22} className="text-gray-900 opacity-80" />
+                <div className="w-6 h-6" />
             </div>
 
             <div className="mt-auto">
                 <div className="flex items-center gap-2 mb-3">
-                    <span className="text-sm font-bold text-gray-900 tabular-nums">+{exposure.toFixed(2)}%</span>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">+{exposure.toFixed(2)}%</span>
                 </div>
                 <div 
                    className="relative h-11 w-full rounded-xl border border-black/10 overflow-hidden cursor-pointer group"
@@ -87,23 +86,23 @@ const MarketForecastCard: React.FC = () => {
                         style={{ width: `${sliderVal}%` }}
                     />
                     <div 
-                        className="absolute top-1/2 -translate-y-1/2 w-7 h-7 bg-card-purple rounded-full border-2 border-black shadow-md z-10 transition-all duration-100 ease-out flex items-center justify-center group-hover:scale-110"
+                        className="absolute top-1/2 -translate-y-1/2 w-7 h-7 bg-white rounded-full border-2 border-[#6f5bd6] shadow-md z-10 transition-all duration-100 ease-out flex items-center justify-center group-hover:scale-110"
                         style={{ left: `calc(${sliderVal}% - 14px)` }}
                     >
-                        <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                        <div className="w-1.5 h-1.5 bg-[#6f5bd6] rounded-full" />
                     </div>
                 </div>
             </div>
         </div>
 
         {/* Liquidity Card */}
-        <div className="bg-card-purple rounded-3xl p-6 flex flex-col justify-between h-[180px] relative overflow-hidden transition-transform hover:scale-[1.01] duration-300 shadow-sm">
+        <div className="bg-[#a28cff] rounded-3xl p-5 flex flex-col justify-between h-[170px] relative overflow-hidden border border-purple-300/70">
              <div className="flex justify-between items-start z-10">
                 <div>
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-white/70">Liquidity Forecast</h4>
-                    <div className="text-4xl font-bold mt-1 text-white tracking-tight">$1.3B</div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-white/80">Liquidity Forecast</h4>
+                    <div className="text-3xl font-semibold mt-1 text-white tracking-tight">$1.3B</div>
                 </div>
-                <ArrowUpRight size={22} className="text-white opacity-90" />
+                <div className="w-6 h-6" />
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-[100px] pointer-events-none">
                  <svg width="100%" height="100%" viewBox="0 0 300 100" preserveAspectRatio="none">
@@ -113,11 +112,11 @@ const MarketForecastCard: React.FC = () => {
                              <stop offset="100%" stopColor="white" stopOpacity="0" />
                          </linearGradient>
                      </defs>
-                     <path d="M0,100 L0,70 C50,60 80,80 140,40 S240,50 300,10 L300,100 Z" fill="url(#chartGrad)" />
-                     <path d="M0,70 C50,60 80,80 140,40 S240,50 300,10" fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round" className="opacity-40" />
+                                         <path d="M0,100 L0,70 C50,60 80,80 140,40 S240,50 300,10 L300,100 Z" fill="url(#chartGrad)" />
+                                         <path d="M0,70 C50,60 80,80 140,40 S240,50 300,10" fill="none" stroke="#3a2b76" strokeWidth="2" strokeLinecap="round" className="opacity-60" />
                      <g className="animate-pulse">
-                        <circle cx="140" cy="40" r="12" fill="white" fillOpacity="0.2" />
-                        <circle cx="140" cy="40" r="5" fill="#98F5AA" stroke="black" strokeWidth="1.5" />
+                                                <circle cx="140" cy="40" r="12" fill="white" fillOpacity="0.2" />
+                                                <circle cx="140" cy="40" r="5" fill="#7ee5a4" stroke="#2d215f" strokeWidth="1.5" />
                      </g>
                  </svg>
             </div>

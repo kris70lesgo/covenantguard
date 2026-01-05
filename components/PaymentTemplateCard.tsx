@@ -38,14 +38,14 @@ const PaymentTemplatesCard: React.FC<PaymentTemplatesCardProps> = ({
   const activeUser = users.find(u => u.id === selectedUser);
 
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-sm flex flex-col min-h-[360px] h-auto transition-transform duration-300 hover:-translate-y-1 hover:shadow-md border border-transparent hover:border-gray-100">
+    <div className="bg-[#f8faf7] rounded-3xl p-6 shadow-sm flex flex-col min-h-[320px] h-auto transition-transform duration-300 border border-gray-200/60">
       {/* Header */}
       <div className="mb-6 flex justify-between items-start">
-        <h3 className="text-gray-900 font-medium text-lg">Payment Templates</h3>
+        <h3 className="text-gray-900 font-medium text-sm">Payment Templates</h3>
       </div>
 
       {/* Amount */}
-      <div className="text-4xl font-bold text-gray-900 tracking-tight mb-4">
+      <div className="text-3xl font-semibold text-gray-900 tracking-tight mb-3">
         {total}
       </div>
 
@@ -70,15 +70,13 @@ const PaymentTemplatesCard: React.FC<PaymentTemplatesCardProps> = ({
         </div>
 
         {/* Sub-card: Mandatory Payments */}
-        <div className={`bg-[#F8F9FB] rounded-2xl p-5 relative transition-all duration-500 ease-in-out`}>
+        <div className={`bg-white rounded-2xl p-5 relative transition-all duration-500 ease-in-out border border-gray-100`}>
           <div className="flex justify-between items-start mb-6">
             <div>
               <h4 className="text-sm font-semibold text-gray-900">Mandatory payments</h4>
-              <p className="text-sm text-gray-400 mt-1">Essential dues</p>
+              <p className="text-xs text-gray-500 mt-1">Essential dues</p>
             </div>
-            <button className="w-8 h-8 rounded-full bg-white/50 hover:bg-white flex items-center justify-center transition-colors cursor-pointer shadow-sm">
-              <ArrowUpRight className="w-4 h-4 text-gray-600" />
-            </button>
+            <div className="w-8 h-8" />
           </div>
 
           {/* Avatar Stack Row */}

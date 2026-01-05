@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import ClientShell from "./client-shell";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -20,10 +20,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} antialiased font-sans`}
-      >
-        <Sidebar>{children}</Sidebar>
+      <body className={`${inter.variable} antialiased font-sans`}>
+          <ClientShell>{children}</ClientShell>
       </body>
     </html>
   );

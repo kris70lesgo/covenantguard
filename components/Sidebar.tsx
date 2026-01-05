@@ -18,7 +18,7 @@ export default function Sidebar({ children }: SidebarProps) {
   };
 
   const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Upload Financials', icon: UploadCloud, path: '/upload' },
     { label: 'Portfolio', icon: PieChart, path: '/loans' },
     { label: 'Reports', icon: FileBarChart, path: '/reports' },

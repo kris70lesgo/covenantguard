@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ArrowUpRight } from 'lucide-react';
 import { AnalyticsData } from '../types';
 
 interface AnalyticsCardProps {
@@ -42,21 +41,18 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ data }) => {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between h-[360px] relative overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-md border border-transparent hover:border-gray-100">
+    <div className="bg-white rounded-3xl p-6 shadow-sm flex flex-col justify-between h-[320px] relative overflow-hidden border border-gray-200/60">
       {/* Header */}
       <div className="flex justify-between items-start mb-2 z-20 relative">
-        <h3 className="text-gray-900 font-medium text-lg">Analytics</h3>
-        <button className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer active:scale-95">
-          <ArrowUpRight className="w-5 h-5 text-gray-500" />
-        </button>
+        <h3 className="text-gray-900 font-medium text-sm">Analytics</h3>
       </div>
 
       {/* Amount - transitions when value changes */}
       <div className="z-20 relative">
-        <div className="text-4xl font-bold text-gray-900 tracking-tight transition-all duration-300">
+        <div className="text-3xl font-semibold text-gray-900 tracking-tight transition-all duration-300">
           {currentTotal}
         </div>
-        <p className="text-sm text-gray-400 mt-1 font-medium transition-opacity duration-300">
+        <p className="text-xs text-gray-500 mt-1 font-medium transition-opacity duration-300">
           Revenue for {data[activeIndex]?.label}
         </p>
       </div>
@@ -65,11 +61,18 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ data }) => {
       <div className="flex-1 flex items-end justify-between gap-4 relative mt-4">
         {/* Background Stripes Pattern Overlay */}
         <div 
-          className="absolute inset-0 z-0 pointer-events-none opacity-40"
+          className="absolute inset-0 z-0 pointer-events-none opacity-30"
           style={{
-            backgroundImage: 'repeating-linear-gradient(135deg, transparent, transparent 5px, #f3f4f6 5px, #f3f4f6 10px)'
+            backgroundImage: 'repeating-linear-gradient(135deg, transparent, transparent 6px, #eef2ec 6px, #eef2ec 12px)'
           }}
         />
+
+        {/* Vertical grid lines */}
+        <div className="absolute inset-0 flex justify-between z-0 opacity-40 pointer-events-none">
+          {data.map((_, i) => (
+            <div key={i} className="w-px h-full bg-gray-200" />
+          ))}
+        </div>
 
         {data.map((item, index) => {
           const isActive = index === activeIndex;
@@ -86,31 +89,35 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ data }) => {
                 aria-label={`Select ${item.label} with revenue ${item.amount}`}
                 aria-pressed={isActive}
               > 
-                 {/* The Bar */}
+                {/* The Bar (stacked tint + accent) */}
                 <div 
-                  className={`w-full rounded-2xl transition-all duration-500 ease-out relative
-                    ${isActive 
-                      ? 'bg-[#00C255] shadow-[0_10px_20px_-5px_rgba(0,194,85,0.4)]' 
-                      : 'bg-[#E7F2E9] hover:bg-[#d1e6d5]'
-                    }`}
+                  className="w-full rounded-2xl transition-all duration-500 ease-out relative overflow-hidden"
                   style={{ height: `${item.percentage}%` }}
                 >
-                  {/* Top Indicator Line (Only visible on active) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#dfe3e0] to-[#f4f6f3]" />
+                  <div 
+                    className={`absolute inset-x-0 bottom-0 transition-all duration-500 ease-out ${isActive ? 'bg-[#cfd3cf]' : 'bg-[#e6e9e4]'}`}
+                    style={{ height: '30%' }}
+                  />
+                  <div 
+                    className={`absolute inset-x-0 bottom-[30%] transition-all duration-500 ease-out ${isActive ? 'bg-[#e5e7e4]' : 'bg-[#f2f4f0]'}`}
+                    style={{ height: '60%' }}
+                  />
+                  <div className="absolute inset-0 opacity-25 mix-blend-multiply" style={{ backgroundImage: 'repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(255,255,255,0.45) 6px, rgba(255,255,255,0.45) 12px)' }} />
                   <div 
                     className={`absolute top-3 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full transition-all duration-500
-                    ${isActive ? 'bg-white/30 opacity-100' : 'bg-transparent opacity-0'}`} 
+                    ${isActive ? 'bg-black/15 opacity-100' : 'bg-transparent opacity-0'}`} 
                   />
                   
-                  {/* Percentage Label inside bar */}
-                  <span className={`absolute top-6 left-1/2 -translate-x-1/2 font-medium text-sm transition-colors duration-300
-                     ${isActive ? 'text-white' : 'text-gray-500 opacity-0 group-hover:opacity-100'}`}>
+                  <span className={`absolute top-6 left-1/2 -translate-x-1/2 font-medium text-xs transition-colors duration-300
+                     ${isActive ? 'text-gray-800' : 'text-gray-500 opacity-0 group-hover:opacity-100'}`}>
                     {Math.round(item.percentage)}%
                   </span>
                 </div>
               </div>
               
               {/* X-Axis Label */}
-              <span className={`mt-3 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+              <span className={`mt-3 text-xs font-medium transition-colors duration-300 ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
                 {item.label}
               </span>
             </div>
