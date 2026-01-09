@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { mockLoans } from '@/lib/mock-data';
+import { useState, useEffect } from 'react';
 import LoanSelector from '@/components/LoanSelector';
 import UploadZone from '@/components/UploadZone';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -43,20 +42,34 @@ export default function UploadPage() {
   const [step, setStep] = useState<AppState>('LOAN_SELECTION');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [activeProcessingStep, setActiveProcessingStep] = useState(0);
-  const [isDemoDropdownOpen, setIsDemoDropdownOpen] = useState(false);
   const [uploadedDocument, setUploadedDocument] = useState<UploadedDocument | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const demoDropdownRef = useRef<HTMLDivElement>(null);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [isLoadingLoans, setIsLoadingLoans] = useState(true);
 
+  // Fetch loans from API on mount
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (demoDropdownRef.current && !demoDropdownRef.current.contains(event.target as Node)) {
-        setIsDemoDropdownOpen(false);
+    const fetchLoans = async () => {
+      try {
+        setIsLoadingLoans(true);
+        const response = await fetch('/api/loans');
+        const result = await response.json();
+        
+        if (response.ok && result.loans) {
+          setLoans(result.loans);
+        } else {
+          setError('Failed to load loans');
+        }
+      } catch (err) {
+        console.error('Error fetching loans:', err);
+        setError('Failed to load loans');
+      } finally {
+        setIsLoadingLoans(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    fetchLoans();
   }, []);
 
   const handleLoanSelect = (loan: Loan) => {
@@ -65,23 +78,13 @@ export default function UploadPage() {
   };
 
   const handleUpload = async (file?: File) => {
-    setIsDemoDropdownOpen(false);
     setError(null);
     setStep('UPLOADING');
 
     try {
+      // No more demo mode - require actual file
       if (!file) {
-        // Demo mode - simulate upload
-        setTimeout(() => {
-          setUploadedDocument({
-            id: 'demo-doc',
-            fileName: 'demo-financial-statement.pdf',
-            fileUrl: '/demo/financial.pdf',
-            status: 'uploaded'
-          });
-          setStep('EXTRACTION_READY');
-        }, 2000);
-        return;
+        throw new Error('Please select a file to upload');
       }
 
       const formData = new FormData();
@@ -114,13 +117,12 @@ export default function UploadPage() {
     setActiveProcessingStep(0);
     setError(null);
 
-    // Simulate multi-step processing with visual feedback
-    setTimeout(() => setActiveProcessingStep(1), 1500);
-    setTimeout(() => setActiveProcessingStep(2), 3000);
-
     try {
-      // Call OCR API
-      const response = await fetch('/api/ocr', {
+      // Step 1: AI-driven parsing with Gemini
+      setActiveProcessingStep(1);
+      console.log('🤖 Starting AI parsing...');
+      
+      const parseResponse = await fetch('/api/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,60 +131,126 @@ export default function UploadPage() {
         }),
       });
 
-      const result = await response.json();
+      const parseResult = await parseResponse.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'OCR processing failed');
+      // Check for unsupported document type
+      if (parseResponse.ok && parseResult.unsupportedType) {
+        console.log('⚠️ Unsupported document type detected');
+        throw new Error(parseResult.message || 'Document contains complex debt definitions (e.g., Net Debt). Automatic extraction not supported for this format.');
       }
 
-      setTimeout(() => {
-        setExtractedData(result.extractedData);
-        setStep('REVIEW');
-      }, 4500);
-    } catch (err) {
-      // Fallback to mock data for demo
-      const errorMessage = err instanceof Error ? err.message : 'OCR failed';
-      console.warn('OCR failed, using mock data:', errorMessage);
-      setTimeout(() => {
-        setExtractedData({
-          totalDebt: 14000000,
-          ebitda: 3000000,
-          confidence: 0.92,
+      // If AI parsing successful with high confidence
+      if (parseResponse.ok && parseResult.success && !parseResult.needsFallback) {
+        console.log('✅ AI parsing successful');
+        setActiveProcessingStep(2);
+        
+        setTimeout(() => {
+          setExtractedData({
+            totalDebt: parseResult.extractedData.totalDebt,
+            ebitda: parseResult.extractedData.ebitda,
+            confidence: parseResult.extractedData.confidence,
+          });
+          setStep('REVIEW');
+        }, 1000);
+        return;
+      }
+
+      // Step 2: Fallback to OCR + AI if initial parsing failed or low confidence
+      if (parseResult.needsFallback) {
+        console.log('⚠️ AI parsing incomplete, trying OCR fallback...');
+        setActiveProcessingStep(2);
+
+        const ocrResponse = await fetch('/api/ocr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentId: uploadedDocument?.id,
+          }),
         });
-        setStep('REVIEW');
-      }, 4500);
+
+        const ocrResult = await ocrResponse.json();
+
+        if (ocrResponse.ok && ocrResult.success) {
+          console.log('✅ OCR fallback successful');
+          
+          setTimeout(() => {
+            setExtractedData({
+              totalDebt: ocrResult.extractedData.totalDebt,
+              ebitda: ocrResult.extractedData.ebitda,
+              confidence: ocrResult.extractedData.confidence,
+            });
+            setStep('REVIEW');
+          }, 1000);
+          return;
+        }
+
+        // Hard fail - no mock data
+        throw new Error(ocrResult.message || 'Unable to extract financial data from document');
+      }
+
+      // If we get here, something unexpected happened
+      throw new Error('Document parsing failed');
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Document analysis failed';
+      console.error('Analysis error:', errorMessage);
+      setError(errorMessage);
+      setStep('EXTRACTION_READY');
     }
   };
 
   const handleConfirm = async () => {
+    if (!extractedData) return;
+    
     setStep('RECORDING');
     setError(null);
 
     try {
-      // Call blockchain sealing API
-      const response = await fetch('/api/seal', {
+      // First, validate the extracted data
+      const validateResponse = await fetch('/api/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId: uploadedDocument?.id,
+          totalDebt: extractedData.totalDebt,
+          ebitda: extractedData.ebitda,
+          confidence: extractedData.confidence,
+        }),
+      });
+
+      const validateResult = await validateResponse.json();
+
+      if (!validateResponse.ok) {
+        throw new Error(validateResult.error || 'Validation failed');
+      }
+
+      console.log('✅ Data validated:', validateResult);
+
+      // Then seal on blockchain
+      const sealResponse = await fetch('/api/seal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           loanId: selectedLoan?.id,
           documentId: uploadedDocument?.id,
-          totalDebt: extractedData?.totalDebt,
-          ebitda: extractedData?.ebitda,
+          totalDebt: extractedData.totalDebt,
+          ebitda: extractedData.ebitda,
         }),
       });
 
-      const result = await response.json();
+      const sealResult = await sealResponse.json();
 
       setTimeout(() => {
-        if (response.ok && result.txHash) {
-          console.log(`Document sealed on blockchain! Transaction: ${result.txHash}`);
+        if (sealResponse.ok && sealResult.txHash) {
+          console.log(`✅ Document sealed on blockchain! TX: ${sealResult.txHash}`);
         }
         setStep('COMPLETED');
       }, 2000);
     } catch (err) {
-      console.error('Sealing error:', err);
-      // Still proceed to completed state for demo
-      setTimeout(() => setStep('COMPLETED'), 2000);
+      const errorMessage = err instanceof Error ? err.message : 'Recording failed';
+      console.error('Sealing error:', errorMessage);
+      setError(errorMessage);
+      setStep('REVIEW');
     }
   };
 
@@ -221,13 +289,23 @@ export default function UploadPage() {
         <main className="transition-all duration-300">
           {step === 'LOAN_SELECTION' && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <LoanSelector onSelect={handleLoanSelect} />
+              {isLoadingLoans ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+                </div>
+              ) : loans.length === 0 ? (
+                <div className="text-center py-20">
+                  <p className="text-slate-500">No loans found. Please create a loan first.</p>
+                </div>
+              ) : (
+                <LoanSelector loans={loans} onSelect={handleLoanSelect} />
+              )}
             </div>
           )}
 
           {step === 'UPLOAD_DOCUMENT' && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-4">
-              {/* Navigation and Demo Controls */}
+              {/* Navigation */}
               <div className="flex items-center justify-between px-1">
                 <button 
                   onClick={() => setStep('LOAN_SELECTION')}
@@ -236,26 +314,6 @@ export default function UploadPage() {
                   <ChevronLeft size={16} className="mr-1" />
                   Back
                 </button>
-
-                <div className="relative" ref={demoDropdownRef}>
-                  <button 
-                    onClick={() => setIsDemoDropdownOpen(!isDemoDropdownOpen)}
-                    className="text-[13px] text-slate-400 hover:text-slate-600 hover:underline transition-colors"
-                  >
-                    Want to test but don't have a document?
-                  </button>
-                  
-                  {isDemoDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-sm z-30 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                      <button
-                        onClick={() => handleUpload()}
-                        className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors rounded-lg"
-                      >
-                        Use demo financial statement (PDF)
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
 
               <UploadZone onUpload={handleUpload} />

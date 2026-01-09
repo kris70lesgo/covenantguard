@@ -1,7 +1,6 @@
 // Security middleware and utilities for CovenantGuard APIs
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'crypto';
 
 // Rate limiting storage (in-memory for demo, use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -86,11 +85,11 @@ export function validateFileSize(size: number, maxSize: number = 10 * 1024 * 102
 }
 
 /**
- * Validate loan ID format
+ * Validate loan ID format (UUID v4)
  */
 export function validateLoanId(loanId: string): boolean {
-  // Allow alphanumeric, hyphens, and underscores, length 3-50
-  return /^[a-zA-Z0-9_-]{3,50}$/.test(loanId);
+  // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(loanId);
 }
 
 /**
@@ -117,22 +116,12 @@ export function sanitizeError(error: unknown): string {
 }
 
 /**
- * Generate secure document ID
- */
-export function generateDocumentId(): string {
-  const timestamp = Date.now();
-  const random = createHash('sha256')
-    .update(`${timestamp}${Math.random()}`)
-    .digest('hex')
-    .slice(0, 16);
-  return `doc-${timestamp}-${random}`;
-}
-
 /**
- * Validate document ID format
+ * Validate document ID format (UUID v4)
  */
 export function validateDocumentId(id: string): boolean {
-  return /^doc-\d+-[a-f0-9]{16}$/.test(id);
+  // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
 
 /**

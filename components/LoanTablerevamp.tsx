@@ -68,7 +68,7 @@ export const LoanTable: React.FC<LoanTableProps> = ({ data }) => {
           <tbody className="divide-y divide-gray-100">
             {sortedData.map((loan) => (
               <tr 
-                key={loan.id} 
+                key={loan.loanId} 
                 className="group hover:bg-gray-50/80 transition-colors duration-150 ease-in-out cursor-default"
               >
                 {/* Borrower */}
@@ -110,14 +110,14 @@ export const LoanTable: React.FC<LoanTableProps> = ({ data }) => {
                     loan.status === LoanStatus.BREACH ? 'text-rose-600' : 
                     loan.status === LoanStatus.WARNING ? 'text-amber-600' : 'text-gray-700'
                   }`}>
-                    {loan.currentRatio.toFixed(2)}x
+                    {loan.currentRatio != null ? `${loan.currentRatio.toFixed(2)}x` : '—'}
                   </span>
                 </td>
 
                 {/* Limit */}
                 <td className="px-4 py-3 whitespace-nowrap text-right">
                   <span className="text-sm text-gray-500 font-mono">
-                    {loan.limitRatio.toFixed(2)}x
+                    {loan.limitRatio != null ? `${loan.limitRatio.toFixed(2)}x` : '—'}
                   </span>
                 </td>
 

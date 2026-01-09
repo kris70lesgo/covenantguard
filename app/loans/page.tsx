@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Layout } from 'lucide-react';
 import { ControlBar } from '@/components/ControlBar';
 import { LoanTable } from '@/components/LoanTablerevamp';
 import { generateData } from '@/services/mockData';
@@ -20,24 +19,88 @@ const initialFilterState: FilterState = {
 
 export default function LoansPage() {
   const [data, setData] = useState<LoanFacility[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [quickFilter, setQuickFilter] = useState<LoanStatus | 'All'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [advancedFilters, setAdvancedFilters] = useState<FilterState>(initialFilterState);
 
-  // Initial Data Load
+  // Fetch live portfolio data and merge with mock data
   useEffect(() => {
-    const initialData = generateData(40); // Generate 40 rows
-    setData(initialData);
+    const fetchPortfolio = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Start with mock data
+        const mockData = generateData(40);
+        setData(mockData);
+
+        // Fetch real portfolio data
+        const response = await fetch('/api/portfolio');
+        const result = await response.json();
+        
+        console.log('📊 Portfolio API response:', {
+          ok: response.ok,
+          loanCount: result.loans?.length || 0,
+          loans: result.loans
+        });
+
+        if (response.ok && result.loans && result.loans.length > 0) {
+          // Transform API response to match LoanFacility interface
+          const liveLoans: LoanFacility[] = result.loans.map((loan) => ({
+            loanId: loan.id,
+            borrowerName: loan.borrowerName,
+            facilityAmount: loan.facilityAmount,
+            outstandingAmount: loan.outstandingAmount,
+            covenantType: loan.covenantType,
+            currentRatio: loan.currentRatio ?? 0,
+            covenantLimit: loan.covenantLimit,
+            status: loan.status === 'GREEN' ? 'Compliant' as LoanStatus : 
+                   loan.status === 'AMBER' ? 'Warning' as LoanStatus :
+                   loan.status === 'RED' ? 'Breach' as LoanStatus :
+                   'Pending' as LoanStatus,
+            lastTestDate: loan.lastTestDate ?? new Date().toISOString().split('T')[0],
+            nextTestDate: calculateNextTestDate(loan.lastTestDate),
+            isSealed: loan.isSealed,
+          }));
+
+          // Create a map of loan IDs that have real data
+          const liveLoanIds = new Set(liveLoans.map(l => l.loanId));
+
+          // Merge: Real data overrides mock data, keep mock for loans without events
+          const mergedData = [
+            ...liveLoans,
+            ...mockData.filter(mockLoan => !liveLoanIds.has(mockLoan.loanId))
+          ];
+
+          setData(mergedData);
+        }
+      } catch (err) {
+        console.error('Error fetching portfolio:', err);
+        // Keep mock data on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPortfolio();
   }, []);
+
+  // Helper to calculate next test date (quarterly + 45 days)
+  const calculateNextTestDate = (lastTest: string | null): string => {
+    if (!lastTest) return new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const last = new Date(lastTest);
+    last.setDate(last.getDate() + 135); // 3 months + 45 days
+    return last.toISOString().split('T')[0];
+  };
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
       // 1. Quick Filter (Pills)
       const matchesQuickStatus = quickFilter === 'All' || item.status === quickFilter;
       
-      // 2. Search
-      const matchesSearch = item.borrowerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            item.loanId.toLowerCase().includes(searchTerm.toLowerCase());
+      // 2. Search (with null checks)
+      const matchesSearch = (item.borrowerName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            item.loanId?.toLowerCase().includes(searchTerm.toLowerCase())) ?? true;
 
       // 3. Advanced Filters
       
@@ -88,9 +151,15 @@ export default function LoansPage() {
           onClearAdvancedFilters={() => setAdvancedFilters(initialFilterState)}
         />
 
-        <div className="flex-grow overflow-hidden relative pb-1">
-          <LoanTable data={filteredData} />
-        </div>
+        {isLoading ? (
+          <div className="flex-grow flex items-center justify-center">
+            <div className="text-gray-500">Loading portfolio data...</div>
+          </div>
+        ) : (
+          <div className="flex-grow overflow-hidden relative pb-1">
+            <LoanTable data={filteredData} />
+          </div>
+        )}
       </main>
     </div>
   );

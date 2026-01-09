@@ -7,7 +7,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount?: number | null): string {
+  if (amount === null || amount === undefined) return "—";
+  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -16,7 +18,9 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatCompactCurrency(amount: number): string {
+export function formatCompactCurrency(amount?: number | null): string {
+  if (amount === null || amount === undefined) return "—";
+  
   if (amount >= 1000000) {
     return `$${(amount / 1000000).toFixed(1)}M`;
   } else if (amount >= 1000) {
@@ -25,7 +29,9 @@ export function formatCompactCurrency(amount: number): string {
   return `$${amount.toFixed(0)}`;
 }
 
-export function formatDate(dateString: string): string {
+export function formatDate(dateString?: string | null): string {
+  if (!dateString) return "—";
+  
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -33,7 +39,9 @@ export function formatDate(dateString: string): string {
   });
 }
 
-export function formatDateTime(dateString: string): string {
+export function formatDateTime(dateString?: string | null): string {
+  if (!dateString) return "—";
+  
   return new Date(dateString).toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',

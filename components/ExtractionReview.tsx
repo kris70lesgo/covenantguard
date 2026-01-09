@@ -96,7 +96,7 @@ const ExtractionReview: React.FC<ExtractionReviewProps> = ({
           <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <span className="text-sm text-slate-600">Debt/EBITDA Ratio</span>
             <span className={`text-sm font-semibold ${statusConfig.color}`}>
-              {covenantResult.ratio.toFixed(2)}x
+              {covenantResult.ratio != null ? `${covenantResult.ratio.toFixed(2)}x` : '—'}
             </span>
           </div>
           

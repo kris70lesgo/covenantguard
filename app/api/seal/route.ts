@@ -114,27 +114,32 @@ export async function POST(request: NextRequest) {
 
     // Save compliance event to database
     const supabase = createSupabaseAdmin();
-    const eventId = `event-${Date.now()}`;
 
-    const { error: dbError } = await supabase
-      .from('compliance_events')
+    const { data: covenantRecord, error: dbError } = await supabase
+      .from('covenant_results')
       .insert({
-        id: eventId,
         loan_id: loanId,
-        document_id: documentId,
-        timestamp,
+        upload_id: documentId,
+        test_date: timestamp,
         total_debt: totalDebt,
         ebitda,
-        ratio: covenantResult.ratio,
-        status: covenantResult.status,
+        debt_to_ebitda_ratio: covenantResult.ratio,
+        covenant_status: covenantResult.status,
         tx_hash: txHash,
         block_number: blockNumber,
-      });
+      })
+      .select()
+      .single();
 
     if (dbError) {
       console.error('Database error:', dbError);
-      // Continue even if DB fails
+      return addSecurityHeaders(NextResponse.json(
+        { error: `Database error: ${dbError.message}` },
+        { status: 500 }
+      ));
     }
+
+    const eventId = covenantRecord?.id || `evt-${Date.now()}`;
 
     // Update loan status in database
     await supabase
@@ -151,8 +156,8 @@ export async function POST(request: NextRequest) {
     // Update document status
     if (documentId) {
       await supabase
-        .from('documents')
-        .update({ status: 'sealed' })
+        .from('uploads')
+        .update({ parsing_status: 'validated' })
         .eq('id', documentId);
     }
 
@@ -202,13 +207,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = createSupabaseAdmin();
 
-    let query = supabase.from('compliance_events').select('*').limit(100); // Prevent large queries
+    let query = supabase.from('covenant_results').select('*').limit(100); // Prevent large queries
     
     if (loanId) {
       query = query.eq('loan_id', loanId);
     }
 
-    const { data, error } = await query.order('timestamp', { ascending: false });
+    const { data, error } = await query.order('test_date', { ascending: false });
 
     if (error) {
       logSecurityEvent('Database error in seal GET', { error: error.message });

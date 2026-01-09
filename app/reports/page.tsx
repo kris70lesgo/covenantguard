@@ -21,27 +21,29 @@ type ExportFormat = 'PDF' | 'CSV' | 'Excel';
 
 interface ComplianceEvent {
   id: string;
+  eventId: string;
   loanId: string;
-  entityName: string;
+  borrowerName: string;
   covenantType: string;
-  eventDate: string;
-  exposure: number;
+  testDate: string;
+  exposure: number | null;
   status: ComplianceStatus;
+  ratio: number;
+  covenantLimit: number;
 }
 
-// --- Mock Data ---
-
+// Mock data for initial display
 const MOCK_EVENTS: ComplianceEvent[] = [
-  { id: 'EVT-2024-001', loanId: 'LN-8392', entityName: 'Alpha Logistics Corp', covenantType: 'Debt Service Coverage', eventDate: '2024-05-14', exposure: 2450000, status: 'Compliant' },
-  { id: 'EVT-2024-002', loanId: 'LN-9921', entityName: 'Summit Manufacturing', covenantType: 'Leverage Ratio', eventDate: '2024-05-13', exposure: 1200000, status: 'Warning' },
-  { id: 'EVT-2024-003', loanId: 'LN-1023', entityName: 'Greenfield Energy', covenantType: 'Reporting Deadline', eventDate: '2024-05-12', exposure: 5600000, status: 'Compliant' },
-  { id: 'EVT-2024-004', loanId: 'LN-4451', entityName: 'Apex Retail Group', covenantType: 'Liquidity Min', eventDate: '2024-05-10', exposure: 890000, status: 'Breach' },
-  { id: 'EVT-2024-005', loanId: 'LN-3329', entityName: 'Maritime Ventures', covenantType: 'Interest Coverage', eventDate: '2024-05-09', exposure: 3100000, status: 'Compliant' },
-  { id: 'EVT-2024-006', loanId: 'LN-7721', entityName: 'TechFlow Systems', covenantType: 'Change of Control', eventDate: '2024-05-08', exposure: 1800000, status: 'Compliant' },
-  { id: 'EVT-2024-007', loanId: 'LN-8832', entityName: 'Global Freight', covenantType: 'Leverage Ratio', eventDate: '2024-05-08', exposure: 4200000, status: 'Warning' },
-  { id: 'EVT-2024-008', loanId: 'LN-1192', entityName: 'North Star Properties', covenantType: 'LTV Ratio', eventDate: '2024-05-05', exposure: 6700000, status: 'Compliant' },
-  { id: 'EVT-2024-009', loanId: 'LN-2291', entityName: 'Omega Healthcare', covenantType: 'EBITDA Min', eventDate: '2024-05-02', exposure: 950000, status: 'Breach' },
-  { id: 'EVT-2024-010', loanId: 'LN-5520', entityName: 'Vanguard Construction', covenantType: 'Debt Service Coverage', eventDate: '2024-05-01', exposure: 2100000, status: 'Compliant' },
+  { id: 'mock-001', eventId: 'EVT-DEMO-001', loanId: 'LN-8392', borrowerName: 'Alpha Logistics Corp', covenantType: 'Debt/EBITDA', testDate: '2024-05-14', exposure: 2450000, status: 'Compliant', ratio: 2.1, covenantLimit: 3.5 },
+  { id: 'mock-002', eventId: 'EVT-DEMO-002', loanId: 'LN-9921', borrowerName: 'Summit Manufacturing', covenantType: 'Debt/EBITDA', testDate: '2024-05-13', exposure: 1200000, status: 'Warning', ratio: 3.3, covenantLimit: 3.5 },
+  { id: 'mock-003', eventId: 'EVT-DEMO-003', loanId: 'LN-1023', borrowerName: 'Greenfield Energy', covenantType: 'Debt/EBITDA', testDate: '2024-05-12', exposure: 5600000, status: 'Compliant', ratio: 1.8, covenantLimit: 3.5 },
+  { id: 'mock-004', eventId: 'EVT-DEMO-004', loanId: 'LN-4451', borrowerName: 'Apex Retail Group', covenantType: 'Debt/EBITDA', testDate: '2024-05-10', exposure: 890000, status: 'Breach', ratio: 4.2, covenantLimit: 3.5 },
+  { id: 'mock-005', eventId: 'EVT-DEMO-005', loanId: 'LN-3329', borrowerName: 'Maritime Ventures', covenantType: 'Debt/EBITDA', testDate: '2024-05-09', exposure: 3100000, status: 'Compliant', ratio: 2.5, covenantLimit: 3.5 },
+  { id: 'mock-006', eventId: 'EVT-DEMO-006', loanId: 'LN-7721', borrowerName: 'TechFlow Systems', covenantType: 'Debt/EBITDA', testDate: '2024-05-08', exposure: 1800000, status: 'Compliant', ratio: 2.8, covenantLimit: 3.5 },
+  { id: 'mock-007', eventId: 'EVT-DEMO-007', loanId: 'LN-8832', borrowerName: 'Global Freight', covenantType: 'Debt/EBITDA', testDate: '2024-05-08', exposure: 4200000, status: 'Warning', ratio: 3.4, covenantLimit: 3.5 },
+  { id: 'mock-008', eventId: 'EVT-DEMO-008', loanId: 'LN-1192', borrowerName: 'North Star Properties', covenantType: 'Debt/EBITDA', testDate: '2024-05-05', exposure: 6700000, status: 'Compliant', ratio: 2.2, covenantLimit: 3.5 },
+  { id: 'mock-009', eventId: 'EVT-DEMO-009', loanId: 'LN-2291', borrowerName: 'Omega Healthcare', covenantType: 'Debt/EBITDA', testDate: '2024-05-02', exposure: 950000, status: 'Breach', ratio: 3.8, covenantLimit: 3.5 },
+  { id: 'mock-010', eventId: 'EVT-DEMO-010', loanId: 'LN-5520', borrowerName: 'Vanguard Construction', covenantType: 'Debt/EBITDA', testDate: '2024-05-01', exposure: 2100000, status: 'Compliant', ratio: 1.9, covenantLimit: 3.5 },
 ];
 
 const INITIAL_VISIBLE_COUNT = 5;
@@ -156,6 +158,99 @@ export default function ReportsPage() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>('CSV');
   const [isExporting, setIsExporting] = useState(false);
   const [isEventsExpanded, setIsEventsExpanded] = useState(false);
+  const [events, setEvents] = useState<ComplianceEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalLoans: 0,
+    totalExposure: 0,
+    compliant: 0,
+    warning: 0,
+    breach: 0,
+    complianceRate: 0,
+  });
+
+  // Fetch compliance events and merge with mock data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Start with mock data
+        setEvents(MOCK_EVENTS);
+        
+        // Calculate initial stats from mock data
+        const mockCompliant = MOCK_EVENTS.filter(e => e.status === 'Compliant').length;
+        const mockWarning = MOCK_EVENTS.filter(e => e.status === 'Warning').length;
+        const mockBreach = MOCK_EVENTS.filter(e => e.status === 'Breach').length;
+        const mockTotal = MOCK_EVENTS.length;
+        const mockExposure = MOCK_EVENTS.reduce((sum, e) => sum + (e.exposure || 0), 0);
+        
+        setStats({
+          totalLoans: mockTotal,
+          totalExposure: mockExposure / 1_000_000_000,
+          compliant: mockCompliant,
+          warning: mockWarning,
+          breach: mockBreach,
+          complianceRate: mockTotal > 0 ? (mockCompliant / mockTotal) * 100 : 0,
+        });
+        
+        // Fetch real compliance events
+        const eventsResponse = await fetch('/api/compliance-events?limit=100');
+        const eventsResult = await eventsResponse.json();
+        
+        console.log('📋 Compliance Events API response:', {
+          ok: eventsResponse.ok,
+          eventCount: eventsResult.events?.length || 0,
+          events: eventsResult.events
+        });
+
+        if (eventsResponse.ok && eventsResult.events && eventsResult.events.length > 0) {
+          // Transform live events
+          const liveEvents: ComplianceEvent[] = eventsResult.events.map((event: any) => ({
+            id: event.id,
+            eventId: event.eventId,
+            loanId: event.loanId,
+            borrowerName: event.borrowerName,
+            covenantType: event.covenantType,
+            testDate: event.testDate,
+            exposure: event.exposure,
+            status: event.status === 'GREEN' ? 'Compliant' as ComplianceStatus :
+                   event.status === 'AMBER' ? 'Warning' as ComplianceStatus :
+                   'Breach' as ComplianceStatus,
+            ratio: event.ratio,
+            covenantLimit: event.covenantLimit,
+          }));
+
+          // Live events override mock data - prepend live events
+          const mergedEvents = [...liveEvents, ...MOCK_EVENTS];
+          setEvents(mergedEvents);
+
+          // Calculate stats from merged data
+          const compliantCount = mergedEvents.filter(e => e.status === 'Compliant').length;
+          const warningCount = mergedEvents.filter(e => e.status === 'Warning').length;
+          const breachCount = mergedEvents.filter(e => e.status === 'Breach').length;
+          const totalCount = mergedEvents.length;
+          const totalExp = mergedEvents.reduce((sum, e) => sum + (e.exposure || 0), 0);
+
+          setStats({
+            totalLoans: totalCount,
+            totalExposure: totalExp / 1_000_000_000,
+            compliant: compliantCount,
+            warning: warningCount,
+            breach: breachCount,
+            complianceRate: totalCount > 0 ? (compliantCount / totalCount) * 100 : 0,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching compliance events:', err);
+        // Keep mock data on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleExport = () => {
     setIsExporting(true);
@@ -222,13 +317,13 @@ export default function ReportsPage() {
         <section aria-label="Portfolio Statistics">
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-gray-100 py-3">
             <StatItem 
-              label="Total Loans" 
-              endValue={142} 
+              label="Total Events" 
+              endValue={stats.totalLoans} 
               icon={<Layers />}
             />
             <StatItem 
               label="Total Exposure" 
-              endValue={1.24} 
+              endValue={stats.totalExposure} 
               prefix="$"
               suffix="B"
               decimals={2}
@@ -237,22 +332,22 @@ export default function ReportsPage() {
             />
             <StatItem 
               label="Compliant" 
-              endValue={128}
+              endValue={stats.compliant}
               statusColor="green"
             />
             <StatItem 
               label="Warning" 
-              endValue={11} 
+              endValue={stats.warning} 
               statusColor="yellow"
             />
             <StatItem 
               label="Breach" 
-              endValue={3} 
+              endValue={stats.breach} 
               statusColor="red"
             />
              <StatItem 
               label="Compliance Rate" 
-              endValue={90.1}
+              endValue={stats.complianceRate}
               suffix="%"
               decimals={1}
               icon={<Activity />}
@@ -289,14 +384,14 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {MOCK_EVENTS.map((event) => (
+                  {(isEventsExpanded ? events : events.slice(0, INITIAL_VISIBLE_COUNT)).map((event) => (
                     <tr key={event.id} className="hover:bg-gray-50 transition-colors group">
                       <td className="px-5 py-2.5 whitespace-nowrap text-xs font-medium text-gray-900">
-                        {event.id}
+                        {event.eventId}
                       </td>
                       <td className="px-5 py-2.5 whitespace-nowrap">
                         <div className="flex flex-col">
-                          <span className="text-xs font-medium text-gray-900">{event.entityName}</span>
+                          <span className="text-xs font-medium text-gray-900">{event.borrowerName}</span>
                           <span className="text-[10px] text-gray-500">{event.loanId}</span>
                         </div>
                       </td>
@@ -304,10 +399,10 @@ export default function ReportsPage() {
                         {event.covenantType}
                       </td>
                       <td className="px-5 py-2.5 whitespace-nowrap text-xs text-gray-900 text-right font-mono">
-                        {formatCurrency(event.exposure)}
+                        {event.exposure ? formatCurrency(event.exposure) : 'N/A'}
                       </td>
                       <td className="px-5 py-2.5 whitespace-nowrap text-xs text-gray-500">
-                        {formatDate(event.eventDate)}
+                        {formatDate(event.testDate)}
                       </td>
                       <td className="px-5 py-2.5 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusStyles(event.status)}`}>
@@ -326,7 +421,7 @@ export default function ReportsPage() {
               </table>
             </div>
             
-            {MOCK_EVENTS.length > INITIAL_VISIBLE_COUNT && (
+            {events.length > INITIAL_VISIBLE_COUNT && (
               <button 
                 onClick={() => setIsEventsExpanded(!isEventsExpanded)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all border-t border-gray-200 rounded-b-lg group"
@@ -337,9 +432,11 @@ export default function ReportsPage() {
               </button>
             )}
           </div>
-          <div className="text-[10px] text-gray-400 pt-1 text-right">
-            Showing {isEventsExpanded ? MOCK_EVENTS.length : INITIAL_VISIBLE_COUNT} of {MOCK_EVENTS.length} events.
-          </div>
+          {!isLoading && events.length > 0 && (
+            <div className="text-[10px] text-gray-400 pt-1 text-right">
+              Showing {isEventsExpanded ? events.length : Math.min(INITIAL_VISIBLE_COUNT, events.length)} of {events.length} events.
+            </div>
+          )}
         </section>
 
       </main>

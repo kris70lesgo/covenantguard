@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { mockLoans } from '@/lib/mock-data';
 import { Search, ChevronDown, Check } from 'lucide-react';
 
 interface Loan {
@@ -12,17 +11,18 @@ interface Loan {
 }
 
 interface LoanSelectorProps {
+  loans: Loan[];
   onSelect: (loan: Loan) => void;
 }
 
-const LoanSelector: React.FC<LoanSelectorProps> = ({ onSelect }) => {
+const LoanSelector: React.FC<LoanSelectorProps> = ({ loans, onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredLoans = mockLoans.filter(l => 
+  const filteredLoans = loans.filter(l => 
     l.borrowerName.toLowerCase().includes(search.toLowerCase()) || 
     l.id.toLowerCase().includes(search.toLowerCase())
   );

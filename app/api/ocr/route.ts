@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase';
+import { extractFromOCRText } from '@/lib/gemini';
 import { 
   rateLimit, 
   validateDocumentId, 
@@ -10,7 +11,6 @@ import {
 
 const OCR_API_KEY = process.env.OCR_SPACE_API_KEY;
 const OCR_API_URL = 'https://api.ocr.space/parse/image';
-const MAX_OCR_TEXT_LENGTH = 100000; // Prevent memory issues
 
 interface OCRResult {
   ParsedResults?: Array<{
@@ -24,80 +24,10 @@ interface OCRResult {
 }
 
 /**
- * Parse financial data from OCR text
- * Looks for patterns like:
- * - "Total Debt: $14,000,000"
- * - "EBITDA: 3,000,000"
- * - Table cells with financial figures
+ * OCR Fallback API
+ * This route is ONLY used when AI parsing fails or has low confidence.
+ * It uses OCR.space to extract text, then uses Gemini AI to intelligently parse the text.
  */
-function parseFinancialData(text: string): {
-  totalDebt: number | null;
-  ebitda: number | null;
-  confidence: number;
-} {
-  let totalDebt: number | null = null;
-  let ebitda: number | null = null;
-  let matchCount = 0;
-
-  // Normalize text
-  const normalizedText = text.replace(/\r\n/g, '\n').toLowerCase();
-
-  // Patterns for Total Debt
-  const debtPatterns = [
-    /total\s*debt[:\s]*\$?\s*([\d,]+(?:\.\d+)?)\s*(?:million|m)?/i,
-    /debt[:\s]*\$?\s*([\d,]+(?:\.\d+)?)\s*(?:million|m)?/i,
-    /outstanding\s*debt[:\s]*\$?\s*([\d,]+(?:\.\d+)?)/i,
-    /borrowings?[:\s]*\$?\s*([\d,]+(?:\.\d+)?)/i,
-  ];
-
-  // Patterns for EBITDA
-  const ebitdaPatterns = [
-    /ebitda[:\s]*\$?\s*([\d,]+(?:\.\d+)?)\s*(?:million|m)?/i,
-    /operating\s*income[:\s]*\$?\s*([\d,]+(?:\.\d+)?)/i,
-    /earnings\s*before[:\s]*\$?\s*([\d,]+(?:\.\d+)?)/i,
-  ];
-
-  // Try to find Total Debt
-  for (const pattern of debtPatterns) {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      const value = parseFloat(match[1].replace(/,/g, ''));
-      // Check if it mentions "million"
-      if (text.toLowerCase().includes('million') || match[0].toLowerCase().includes('m')) {
-        totalDebt = value * 1000000;
-      } else if (value < 1000) {
-        // Likely in millions if small number
-        totalDebt = value * 1000000;
-      } else {
-        totalDebt = value;
-      }
-      matchCount++;
-      break;
-    }
-  }
-
-  // Try to find EBITDA
-  for (const pattern of ebitdaPatterns) {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      const value = parseFloat(match[1].replace(/,/g, ''));
-      if (text.toLowerCase().includes('million') || match[0].toLowerCase().includes('m')) {
-        ebitda = value * 1000000;
-      } else if (value < 1000) {
-        ebitda = value * 1000000;
-      } else {
-        ebitda = value;
-      }
-      matchCount++;
-      break;
-    }
-  }
-
-  // Calculate confidence based on matches found
-  const confidence = matchCount / 2; // 0, 0.5, or 1.0
-
-  return { totalDebt, ebitda, confidence };
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -106,155 +36,251 @@ export async function POST(request: NextRequest) {
     if (rateLimitResponse) return addSecurityHeaders(rateLimitResponse);
 
     const body = await request.json();
-    const { documentId, fileUrl, base64File } = body;
+    const { documentId } = body;
 
-    // Validate documentId if provided
-    if (documentId && !validateDocumentId(documentId)) {
-      logSecurityEvent('Invalid document ID in OCR', { documentId });
+    // Validate documentId
+    if (!documentId || !validateDocumentId(documentId)) {
+      logSecurityEvent('Invalid document ID in OCR fallback', { documentId });
       return addSecurityHeaders(NextResponse.json(
         { error: 'Invalid documentId format' },
         { status: 400 }
       ));
     }
 
-    // Validate fileUrl format
-    if (fileUrl) {
-      try {
-        const url = new URL(fileUrl);
-        // Only allow HTTPS for security
-        if (url.protocol !== 'https:') {
-          logSecurityEvent('Non-HTTPS URL in OCR', { fileUrl });
-          return addSecurityHeaders(NextResponse.json(
-            { error: 'Only HTTPS URLs are allowed' },
-            { status: 400 }
-          ));
-        }
-      } catch {
-        logSecurityEvent('Invalid URL in OCR', { fileUrl });
-        return addSecurityHeaders(NextResponse.json(
-          { error: 'Invalid file URL' },
-          { status: 400 }
-        ));
-      }
-    }
-
     if (!OCR_API_KEY) {
+      logSecurityEvent('OCR API key not configured', {});
       return addSecurityHeaders(NextResponse.json(
-        { error: 'OCR service not configured' },
+        { error: 'OCR service not configured - cannot perform fallback' },
         { status: 503 }
       ));
     }
 
+    // Initialize Supabase
+    const supabase = createSupabaseAdmin();
+
+    // Get document from database
+    const { data: document, error: docError } = await supabase
+      .from('uploads')
+      .select('*')
+      .eq('id', documentId)
+      .single();
+
+    if (docError || !document) {
+      logSecurityEvent('Document not found in OCR fallback', { documentId });
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Document not found' },
+        { status: 404 }
+      ));
+    }
+
+    // Update status to indicate OCR fallback is in progress
+    await supabase
+      .from('uploads')
+      .update({ 
+        parsing_status: 'ocr_fallback',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', documentId);
+
+    console.log(`🔄 Starting OCR fallback for document ${documentId}`);
+
     let ocrText = '';
     let ocrSuccess = false;
 
-    // Try OCR with URL first
-    if (fileUrl) {
+    // Try URL-based OCR first
+    try {
+      // Get public URL for the file
+      const { data: urlData } = supabase
+        .storage
+        .from('financials')
+        .getPublicUrl(document.file_path);
+
+      if (urlData?.publicUrl) {
+        console.log(`🔗 Attempting OCR with URL: ${urlData.publicUrl}`);
+        
+        const formData = new FormData();
+        formData.append('apikey', OCR_API_KEY);
+        formData.append('url', urlData.publicUrl);
+        formData.append('filetype', 'PDF');
+        formData.append('language', 'eng');
+        formData.append('OCREngine', '2');
+        formData.append('isTable', 'true');
+        formData.append('scale', 'true');
+        formData.append('isCreateSearchablePdf', 'false');
+
+        const ocrResponse = await fetch(OCR_API_URL, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (ocrResponse.ok) {
+          const ocrResult: OCRResult = await ocrResponse.json();
+          
+          // Handle page limit errors for URL method too
+          if (ocrResult.IsErroredOnProcessing) {
+            const errorMsg = ocrResult.ErrorMessage?.join(', ') || '';
+            if (errorMsg.toLowerCase().includes('page limit') && ocrResult.ParsedResults?.[0]?.ParsedText) {
+              console.warn(`⚠️ URL OCR page limit reached - using partial results`);
+              ocrText = ocrResult.ParsedResults[0].ParsedText;
+              ocrSuccess = true;
+              console.log(`✅ URL-based OCR partial success - ${ocrText.length} characters`);
+            }
+          } else if (ocrResult.ParsedResults?.[0]?.ParsedText) {
+            ocrText = ocrResult.ParsedResults[0].ParsedText;
+            ocrSuccess = true;
+            console.log(`✅ URL-based OCR successful - ${ocrText.length} characters`);
+          }
+        }
+      }
+    } catch (urlError) {
+      console.warn('URL-based OCR failed, trying base64...', urlError);
+    }
+
+    // Fallback to base64 if URL failed
+    if (!ocrSuccess) {
+      console.log(`📄 Attempting OCR with base64 file upload...`);
+      
+      // Download file from storage
+      const { data: fileData, error: downloadError } = await supabase
+        .storage
+        .from('financials')
+        .download(document.file_path);
+
+      if (downloadError || !fileData) {
+        throw new Error('Could not download file for OCR processing');
+      }
+
+      // Convert to base64
+      const arrayBuffer = await fileData.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64 = buffer.toString('base64');
+
       const formData = new FormData();
       formData.append('apikey', OCR_API_KEY);
-      formData.append('url', fileUrl);
+      formData.append('base64Image', `data:application/pdf;base64,${base64}`);
+      formData.append('filetype', 'PDF');
       formData.append('language', 'eng');
-      formData.append('isTable', 'true');
       formData.append('OCREngine', '2');
+      formData.append('isTable', 'true');
+      formData.append('scale', 'true');
+      formData.append('isCreateSearchablePdf', 'false');
 
       const ocrResponse = await fetch(OCR_API_URL, {
         method: 'POST',
         body: formData,
       });
 
-      if (ocrResponse.ok) {
-        const ocrResult: OCRResult = await ocrResponse.json();
+      if (!ocrResponse.ok) {
+        throw new Error(`OCR service returned status ${ocrResponse.status}`);
+      }
+
+      const ocrResult: OCRResult = await ocrResponse.json();
+      
+      if (ocrResult.IsErroredOnProcessing || !ocrResult.ParsedResults?.[0]?.ParsedText) {
+        const errorMsg = ocrResult.ErrorMessage?.join(', ') || 'OCR processing failed';
         
-        if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.[0]?.ParsedText) {
-          ocrText = ocrResult.ParsedResults[0].ParsedText;
-          ocrSuccess = true;
+        // Handle page limit errors more gracefully
+        if (errorMsg.toLowerCase().includes('page limit')) {
+          console.warn(`⚠️ OCR page limit reached - attempting to process available pages`);
+          // If we got partial text, still try to extract from it
+          if (ocrResult.ParsedResults?.[0]?.ParsedText) {
+            ocrText = ocrResult.ParsedResults[0].ParsedText;
+            ocrSuccess = true;
+            console.log(`✅ Base64 OCR partial success - ${ocrText.length} characters`);
+          } else {
+            throw new Error(`OCR page limit reached: ${errorMsg}`);
+          }
+        } else {
+          throw new Error(`OCR failed: ${errorMsg}`);
         }
+      } else {
+        ocrText = ocrResult.ParsedResults[0].ParsedText;
+        ocrSuccess = true;
+        console.log(`✅ Base64 OCR successful - ${ocrText.length} characters`);
       }
     }
 
-    // Try with base64 if URL failed
-    if (!ocrSuccess && base64File) {
-      const formData = new FormData();
-      formData.append('apikey', OCR_API_KEY);
-      formData.append('base64Image', base64File);
-      formData.append('language', 'eng');
-      formData.append('isTable', 'true');
-      formData.append('OCREngine', '2');
-
-      const ocrResponse = await fetch(OCR_API_URL, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (ocrResponse.ok) {
-        const ocrResult: OCRResult = await ocrResponse.json();
-        
-        if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.[0]?.ParsedText) {
-          ocrText = ocrResult.ParsedResults[0].ParsedText;
-          ocrSuccess = true;
-        }
-      }
+    // Only proceed if we got OCR text
+    if (!ocrSuccess || !ocrText) {
+      throw new Error('OCR failed to extract any text from document');
     }
 
-    // Parse financial data from OCR text
-    const parsedData = parseFinancialData(ocrText);
+    // Use Gemini AI to intelligently extract from OCR text
+    console.log(`🤖 Using AI to parse OCR text...`);
+    const extracted = await extractFromOCRText(ocrText);
 
-    // If we couldn't extract data, return mock data for demo
-    if (!parsedData.totalDebt || !parsedData.ebitda) {
-      console.log('Could not extract financial data, using demo values');
+    console.log(`✅ AI extraction from OCR complete - Confidence: ${extracted.confidence}`);
+    console.log(`   Total Debt: ${extracted.totalDebt}, EBITDA: ${extracted.ebitda}`);
+
+    // Determine if extraction was successful
+    const isSuccess = extracted.confidence >= 0.5 && 
+                      extracted.totalDebt !== null && 
+                      extracted.ebitda !== null;
+
+    // Update document with OCR results
+    await supabase
+      .from('uploads')
+      .update({
+        parsed_total_debt: extracted.totalDebt,
+        parsed_ebitda: extracted.ebitda,
+        ai_confidence: extracted.confidence,
+        parsing_status: isSuccess ? 'parsed' : 'failed',
+        parsing_error: isSuccess ? null : (extracted.reasoning || 'Could not extract financial data'),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', documentId);
+
+    if (!isSuccess) {
+      // Hard fail - no mock data
       return addSecurityHeaders(NextResponse.json({
-        success: true,
-        ocrSuccess,
-        rawText: ocrText.slice(0, 1000), // Limit response size
-        extractedData: {
-          totalDebt: 14000000,
-          ebitda: 3000000,
-          confidence: 0.92,
-          rawText: ocrText ? ocrText.slice(0, 500) : 'Demo mode - no OCR text available',
-        },
-        demo: true,
-      }));
+        success: false,
+        error: 'OCR fallback failed to extract financial data',
+        details: extracted.reasoning,
+        extractedData: null,
+        message: 'Unable to parse document. Please verify the document contains clear financial statements or enter data manually.'
+      }, { status: 422 }));
     }
 
-    // Update document in database if we have a documentId
-    if (documentId) {
+    return addSecurityHeaders(NextResponse.json({
+      success: true,
+      method: 'ocr_fallback',
+      ocrSuccess,
+      extractedData: {
+        totalDebt: extracted.totalDebt,
+        ebitda: extracted.ebitda,
+        confidence: extracted.confidence,
+        reasoning: extracted.reasoning,
+        rawTextPreview: ocrText.slice(0, 500),
+      },
+      message: 'Document parsed using OCR + AI fallback'
+    }));
+
+  } catch (error: unknown) {
+    logSecurityEvent('OCR fallback error', { error: sanitizeError(error) });
+    
+    // Update document status to reflect hard failure
+    try {
+      const body = await request.json();
       const supabase = createSupabaseAdmin();
       await supabase
-        .from('documents')
-        .update({
-          extracted_text: ocrText.slice(0, MAX_OCR_TEXT_LENGTH),
-          ocr_confidence: parsedData.confidence,
-          status: 'extracted',
+        .from('uploads')
+        .update({ 
+          parsing_status: 'failed',
+          parsing_error: sanitizeError(error),
+          updated_at: new Date().toISOString()
         })
-        .eq('id', documentId);
-    }
+        .eq('id', body.documentId);
+    } catch {}
 
-    return addSecurityHeaders(NextResponse.json({
-      success: true,
-      ocrSuccess,
-      rawText: ocrText.slice(0, 1000), // Limit response size
-      extractedData: {
-        totalDebt: parsedData.totalDebt,
-        ebitda: parsedData.ebitda,
-        confidence: parsedData.confidence,
-        rawText: ocrText.slice(0, 500),
+    // Hard fail - no mock data
+    return addSecurityHeaders(NextResponse.json(
+      { 
+        success: false,
+        error: 'OCR fallback failed',
+        details: sanitizeError(error),
+        message: 'Unable to process document. Please check the file quality or enter data manually.'
       },
-      demo: false,
-    }));
-  } catch (error: unknown) {
-    logSecurityEvent('OCR error', { error: sanitizeError(error) });
-    
-    // Return demo data on error (don't expose error details)
-    return addSecurityHeaders(NextResponse.json({
-      success: true,
-      error: sanitizeError(error),
-      extractedData: {
-        totalDebt: 14000000,
-        ebitda: 3000000,
-        confidence: 0.92,
-        rawText: 'Demo mode - OCR error occurred',
-      },
-      demo: true,
-    }));
+      { status: 500 }
+    ));
   }
 }

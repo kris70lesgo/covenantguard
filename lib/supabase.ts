@@ -24,29 +24,33 @@ export function createSupabaseAdmin() {
 }
 
 // Database types
+export interface DbUpload {
+  id: string;
+  loan_id: string;
+  file_url: string;
+  file_path: string;
+  file_name?: string;
+  file_size?: number;
+  file_hash?: string;
+  mime_type?: string;
+  uploaded_at: string;
+  parsing_status: 'uploaded' | 'ai_in_progress' | 'parsed' | 'parsed_incomplete' | 'ocr_fallback' | 'validated' | 'failed' | 'unsupported_format';
+  parsed_total_debt?: number;
+  parsed_ebitda?: number;
+  ai_confidence?: number;
+  parsing_error?: string;
+  parsing_attempts: number;
+  updated_at?: string;
+}
+
 export interface DbLoan {
   id: string;
-  borrower_name: string;
-  facility_amount: number;
-  outstanding_amount: number;
-  maturity_date: string;
-  covenant_type: string;
+  name: string; // Actual column name in loans table
   covenant_limit: number;
   created_at: string;
   updated_at: string;
-}
-
-export interface DbDocument {
-  id: string;
-  loan_id: string;
-  file_name: string;
-  file_path: string;
-  file_size: number;
-  mime_type: string;
-  upload_date: string;
-  status: 'pending' | 'processing' | 'extracted' | 'confirmed' | 'sealed';
-  extracted_text?: string;
-  ocr_confidence?: number;
+  // Note: MVP does not track facility_amount, outstanding_amount, maturity_date, or covenant_type
+  // covenant_type is hardcoded as "Debt/EBITDA" in API responses
 }
 
 export interface DbComplianceEvent {

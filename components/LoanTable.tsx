@@ -106,12 +106,12 @@ export default function LoanTable({ loans, title = 'Loan Portfolio' }: LoanTable
                           : 'error.main'
                       }
                     >
-                      {loan.currentRatio.toFixed(2)}x
+                      {loan.currentRatio != null ? `${loan.currentRatio.toFixed(2)}x` : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell align="center">
                     <Typography variant="body2" color="text.secondary">
-                      {loan.covenantLimit.toFixed(1)}x
+                      {loan.covenantLimit != null ? `${loan.covenantLimit.toFixed(1)}x` : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell align="center">
