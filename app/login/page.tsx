@@ -36,7 +36,7 @@ export default function LoginPage() {
 				email,
 				password,
 				options: {
-					emailRedirectTo: `${window.location.origin}/dashboard`,
+					emailRedirectTo: 'https://credexia.vercel.app/dashboard',
 				},
 			});
 
@@ -53,7 +53,7 @@ export default function LoginPage() {
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider,
 			options: {
-				redirectTo: `${window.location.origin}/dashboard`,
+				redirectTo: 'https://credexia.vercel.app/dashboard',
 			},
 		});
 		if (error) throw error;
