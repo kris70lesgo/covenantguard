@@ -332,8 +332,8 @@ const HeroVideoSection: React.FC = () => {
              <div className="w-full max-w-4xl mx-auto">
                 <HeroVideoDialog
                     animationStyle="from-center"
-                    videoSrc="https://www.youtube.com/embed/qh3NGpYRG3I?si=4rb-zSdDkVK9qxxb"
-                    thumbnailSrc="https://startup-template-sage.vercel.app/hero-dark.png"
+                  videoSrc="https://youtu.be/3GrR22gW9SU"
+                  thumbnailSrc="/thumb.png"
                     thumbnailAlt="Credexia Platform Demo"
                 />
              </div>
