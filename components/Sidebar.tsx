@@ -46,7 +46,7 @@ export default function Sidebar({ children }: SidebarProps) {
             </div>
             {!isCollapsed && (
               <span className="text-sm font-bold text-gray-800 tracking-tight whitespace-nowrap overflow-hidden opacity-100 transition-opacity duration-200">
-                LenderFin
+                Credexia
               </span>
             )}
           </div>

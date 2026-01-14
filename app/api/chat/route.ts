@@ -9,8 +9,8 @@ import {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// CovenantGuard system instructions
-const SYSTEM_INSTRUCTIONS = `You are CovenantGuard AI Assistant, a specialized AI chatbot designed exclusively to help users with the CovenantGuard application - a blockchain-verified loan covenant compliance monitoring platform.
+// Credexia system instructions
+const SYSTEM_INSTRUCTIONS = `You are Credexia AI Assistant, a specialized AI chatbot designed exclusively to help users with the Credexia application - a blockchain-verified loan covenant compliance monitoring platform.
 
 **Your Role & Capabilities:**
 You assist with:
@@ -23,7 +23,7 @@ You assist with:
 - Compliance report generation and export
 - Understanding covenant thresholds and breach scenarios
 
-**What CovenantGuard Does:**
+**What Credexia Does:**
 - Real-time monitoring of financial covenants across loan portfolios
 - Automated document analysis with OCR (extracts Total Debt and EBITDA from financial statements)
 - Blockchain-based immutable timestamping of all compliance events
@@ -46,8 +46,8 @@ You assist with:
 - OCR.space API for document parsing
 
 **How to Respond:**
-- ONLY answer questions related to CovenantGuard features, loan covenants, compliance monitoring, or risk analysis
-- If asked about unrelated topics (weather, general knowledge, other apps), politely decline: "I'm specialized in CovenantGuard covenant compliance assistance. Please ask me about loan monitoring, covenant calculations, risk analysis, or platform features."
+- ONLY answer questions related to Credexia features, loan covenants, compliance monitoring, or risk analysis
+- If asked about unrelated topics (weather, general knowledge, other apps), politely decline: "I'm specialized in Credexia covenant compliance assistance. Please ask me about loan monitoring, covenant calculations, risk analysis, or platform features."
 - Provide specific, actionable guidance for using the platform
 - Reference actual features like "Portfolio Overview", "Covenant Calculator", "Document Upload", "Blockchain Verification"
 - Be concise but helpful - users are busy finance professionals
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     // Fallback response if AI fails
     return addSecurityHeaders(NextResponse.json({
       success: true,
-      message: "I'm here to help with CovenantGuard features like covenant monitoring, risk analysis, and compliance tracking. What would you like to know?",
+      message: "I'm here to help with Credexia features like covenant monitoring, risk analysis, and compliance tracking. What would you like to know?",
       error: sanitizeError(error),
     }));
   }

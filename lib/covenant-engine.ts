@@ -1,5 +1,5 @@
 /**
- * CovenantGuard - Covenant Engine
+ * Credexia - Covenant Engine
  * 
  * Pure, deterministic covenant calculation logic.
  * No API calls, no side effects - just math.

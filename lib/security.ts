@@ -1,4 +1,4 @@
-// Security middleware and utilities for CovenantGuard APIs
+// Security middleware and utilities for Credexia APIs
 
 import { NextRequest, NextResponse } from 'next/server';
 

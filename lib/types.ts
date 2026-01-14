@@ -1,4 +1,4 @@
-// Core types for CovenantGuard
+// Core types for Credexia
 
 export type CovenantStatus = 'GREEN' | 'AMBER' | 'RED';
 

@@ -96,7 +96,7 @@ async function testSupabaseStorage() {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     
     // Create a small test file
-    const testContent = 'This is a test file for CovenantGuard infrastructure verification';
+    const testContent = 'This is a test file for Credexia infrastructure verification';
     const testFileName = `test-${Date.now()}.txt`;
     
     const { data: uploadData, error: uploadError } = await supabase
@@ -352,7 +352,7 @@ async function testDeploymentReadiness() {
 // Main execution
 async function main() {
   console.log('═══════════════════════════════════════════════════');
-  console.log('   CovenantGuard Infrastructure Verification');
+  console.log('   Credexia Infrastructure Verification');
   console.log('═══════════════════════════════════════════════════');
   
   await checkEnv();

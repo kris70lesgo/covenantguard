@@ -10,7 +10,7 @@ import {
 } from '../lib/covenant-engine';
 
 console.log('═══════════════════════════════════════════════════');
-console.log('   CovenantGuard - Covenant Engine Tests');
+console.log('   Credexia - Covenant Engine Tests');
 console.log('═══════════════════════════════════════════════════\n');
 
 // Run the built-in tests

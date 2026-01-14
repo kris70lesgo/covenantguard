@@ -7,7 +7,7 @@ dotenv.config({ path: '.env.local' });
 
 async function main() {
   console.log('═══════════════════════════════════════════════════');
-  console.log('   CovenantGuard - Contract Deployment');
+  console.log('   Credexia - Contract Deployment');
   console.log('═══════════════════════════════════════════════════\n');
 
   // Load environment variables

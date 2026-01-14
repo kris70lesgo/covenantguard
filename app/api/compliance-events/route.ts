@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
         totalDebt: event.total_debt,
         ebitda: event.ebitda,
         ratio: event.debt_to_ebitda_ratio,
+        
         covenantLimit: loan?.covenant_limit || 3.5,
         status: event.covenant_status,
         testDate: event.test_date,

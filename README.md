@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Credexia
 
-## Getting Started
+A Next.js + Supabase + Ethers-powered platform for blockchain-verified loan covenant monitoring, OCR-driven data extraction, and portfolio analytics.
 
-First, run the development server:
+## Features
+- AI-assisted chat for covenant guidance (Gemini)
+- OCR-backed document intake with fallback parsing
+- Covenant calculations (Debt/EBITDA, ICR, current ratio)
+- Polygon Amoy sealing for compliance events
+- Dashboard for loans, uploads, reports, and trade utilities
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+- Next.js 16, TypeScript, Tailwind
+- Supabase (auth, DB, storage)
+- Ethers.js for Polygon interactions
+- Google Gemini for AI responses and parsing
+
+## Prerequisites
+- Node 18+ and npm
+- Supabase project with SUPABASE_URL and service key
+- Polygon Amoy RPC endpoint and funded deployer key
+- Gemini API key for AI features
+
+## Setup
+1) Install deps: npm install
+2) Copy .env.local.example to .env.local (if present) and set:
 ```
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_ANON_KEY=
+GEMINI_API_KEY=
+POLYGON_RPC_URL=
+BLOCKCHAIN_PRIVATE_KEY=
+API_KEY=                  # optional API auth
+ALLOWED_ORIGINS=*         # comma-separated list in prod
+```
+3) Run dev server: npm run dev
+4) Optional: compile contracts: npx hardhat compile
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
+- npm run dev – start Next.js dev server
+- npm run lint – lint codebase
+- npx hardhat compile – compile contracts
+- npx tsx scripts/deploy.ts – deploy CovenantRegistry to Polygon Amoy
+- npx tsx scripts/test-covenant-engine.ts – run covenant logic tests
+- npx tsx scripts/verify-infrastructure.ts – smoke-check Supabase, OCR, blockchain readiness
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Testing Notes
+- Covenant logic tests are deterministic (pure math)
+- OCR/Gemini flows require valid credentials and network access
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Operational Tips
+- Use separate Supabase buckets for financial docs; restrict RLS in production
+- Keep GEMINI_API_KEY and blockchain keys out of client bundles
+- Rotate keys and enforce HTTPS in production

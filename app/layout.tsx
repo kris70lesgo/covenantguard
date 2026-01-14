@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CovenantGuard - AI-Driven Loan Monitoring",
+  title: "Credexia - AI-Driven Loan Monitoring",
   description: "AI-powered loan covenant monitoring with blockchain audit trails",
 };
 

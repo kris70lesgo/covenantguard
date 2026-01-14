@@ -156,7 +156,7 @@ const Navbar: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-tr from-gray-200 to-white opacity-100"></div>
           <ShieldCheck size={24} strokeWidth={2.5} className="relative z-10" />
         </div>
-        <span className="text-lg font-bold tracking-tight text-white ml-1">CovenantGuard</span>
+        <span className="text-lg font-bold tracking-tight text-white ml-1">Credexia</span>
       </div>
 
       <div className="hidden md:flex items-center gap-1 bg-[#111316] border border-white/10 rounded-full px-1.5 py-1.5 shadow-2xl">
@@ -325,7 +325,7 @@ const HeroVideoSection: React.FC = () => {
              <div className="text-center mb-16 relative z-10">
                  <h2 className="text-4xl md:text-5xl font-semibold mb-4 text-white tracking-tight">See It In Action</h2>
                  <p className="text-gray-500 font-light text-sm md:text-base max-w-lg mx-auto">
-                     Watch how CovenantGuard transforms complex borrower data into verified compliance records in seconds.
+                     Watch how Credexia transforms complex borrower data into verified compliance records in seconds.
                  </p>
              </div>
              
@@ -334,7 +334,7 @@ const HeroVideoSection: React.FC = () => {
                     animationStyle="from-center"
                     videoSrc="https://www.youtube.com/embed/qh3NGpYRG3I?si=4rb-zSdDkVK9qxxb"
                     thumbnailSrc="https://startup-template-sage.vercel.app/hero-dark.png"
-                    thumbnailAlt="CovenantGuard Platform Demo"
+                    thumbnailAlt="Credexia Platform Demo"
                 />
              </div>
         </section>
@@ -518,7 +518,7 @@ const FooterSection: React.FC = () => {
                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
                         <ShieldCheck size={20} className="text-black" />
                      </div>
-                     <span className="text-xl font-bold tracking-tight text-white">CovenantGuard</span>
+                     <span className="text-xl font-bold tracking-tight text-white">Credexia</span>
                   </div>
                   <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
                      Automated covenant monitoring with deterministic logic and verifiable audit trails.
@@ -539,7 +539,7 @@ const FooterSection: React.FC = () => {
                </div>
             </div>
             <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-600">
-               <span>&copy; 2025 CovenantGuard Systems. Built for Enterprise Banking.</span>
+               <span>&copy; 2025 Credexia Systems. Built for Enterprise Banking.</span>
                <a href="#" className="hover:text-gray-400 transition-colors">Privacy & Security Policy</a>
             </div>
          </div>

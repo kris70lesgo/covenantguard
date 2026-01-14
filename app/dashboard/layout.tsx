@@ -1,7 +1,7 @@
 import React from "react";
 
 export const metadata = {
-  title: "CovenantGuard - Dashboard",
+  title: "Credexia - Dashboard",
 };
 
 export default function DashboardLayout({

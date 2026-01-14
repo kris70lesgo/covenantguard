@@ -518,4 +518,4 @@ Without this key, parsing endpoint will return `503 Service Unavailable`.
 
 ---
 
-Built with ❤️ for CovenantGuard TradeClear
+Built with ❤️ for Credexia TradeClear

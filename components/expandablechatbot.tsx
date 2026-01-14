@@ -615,7 +615,7 @@ export default function ExpandableChatDemo() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      content: "👋 **Hello! I'm CovenantGuard AI**, your specialized compliance assistant.\n\nI can help you with:\n- 📊 Loan covenant monitoring\n- 📈 Risk analysis & debt-to-EBITDA calculations\n- 📄 Document uploads & OCR extraction\n- 🔐 Blockchain verification\n- 💼 Portfolio insights\n\nWhat would you like to know?",
+      content: "👋 **Hello! I'm Credexia AI**, your specialized compliance assistant.\n\nI can help you with:\n- 📊 Loan covenant monitoring\n- 📈 Risk analysis & debt-to-EBITDA calculations\n- 📄 Document uploads & OCR extraction\n- 🔐 Blockchain verification\n- 💼 Portfolio insights\n\nWhat would you like to know?",
       sender: "ai",
       role: "model",
     },
@@ -680,7 +680,7 @@ export default function ExpandableChatDemo() {
         ...prev,
         {
           id: prev.length + 1,
-          content: "I'm having trouble connecting right now. I'm specialized in CovenantGuard features like covenant monitoring, risk analysis, and compliance tracking. Please try again.",
+          content: "I'm having trouble connecting right now. I'm specialized in Credexia features like covenant monitoring, risk analysis, and compliance tracking. Please try again.",
           sender: "ai",
           role: "model",
         },
@@ -697,7 +697,7 @@ export default function ExpandableChatDemo() {
       icon={<Bot className="h-6 w-6" />}
     >
       <ExpandableChatHeader className="flex-col text-center justify-center">
-        <h1 className="text-xl font-semibold text-black">CovenantGuard AI ✨</h1>
+        <h1 className="text-xl font-semibold text-black">Credexia AI ✨</h1>
         <p className="text-sm text-black">
           Your compliance assistant
         </p>

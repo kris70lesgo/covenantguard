@@ -2,7 +2,7 @@
 
 ## Overview
 
-CovenantGuard now uses **Gemini 1.5 Pro** multimodal AI for intelligent PDF parsing, with OCR.space as a fallback. This eliminates brittle regex patterns and provides robust, accurate financial data extraction.
+Credexia now uses **Gemini 1.5 Pro** multimodal AI for intelligent PDF parsing, with OCR.space as a fallback. This eliminates brittle regex patterns and provides robust, accurate financial data extraction.
 
 ## Architecture
 
@@ -330,4 +330,4 @@ await fetch('/api/seal', {...});
 
 ## License
 
-Proprietary - CovenantGuard Financial Compliance Platform
+Proprietary - Credexia Financial Compliance Platform

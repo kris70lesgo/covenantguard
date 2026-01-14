@@ -73,8 +73,8 @@ export default function LoginPage() {
 				{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
 			</button>
 			<AuthComponent
-				logo={<div className="bg-slate-900 text-white rounded-md p-1.5 font-bold text-xs">CG</div>}
-				brandName="CovenantGuard"
+				logo={<div className="bg-slate-900 text-white rounded-md p-1.5 font-bold text-xs">CX</div>}
+				brandName="Credexia"
 				onEmailSubmit={handleEmailSubmit}
 				onOAuthClick={handleOAuthClick}
 				onSuccess={handleSuccess}
